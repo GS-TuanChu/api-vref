@@ -1,0 +1,14 @@
+{
+	"admin": {
+		"desc": "full access"
+	},
+	"customer_support": {
+		"desc": "can read/write livestream, transaction, user"
+	},
+	"marketing": {
+		"desc": "can read statistic"
+	},
+	"server": {
+		"desc": "can read live stream"
+	}
+}

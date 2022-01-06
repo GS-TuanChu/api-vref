@@ -1,0 +1,25 @@
+{
+	"classLevelPermissions": {
+		"find": {
+			"role:admin": true
+		},
+		"get": {
+			"*": true
+		},
+		"create": {
+			"requiresAuthentication": true
+		},
+		"update": {
+			"role:admin": true,
+			"role:customer_support": true
+		},
+		"delete": {
+			"role:admin": true,
+			"role:customer_support": true
+		}
+	},
+	"accessControlList": {
+		"Read": "public",
+		"Write": "admin, customer_support"
+	}
+}
