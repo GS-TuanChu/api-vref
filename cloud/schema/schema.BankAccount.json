@@ -7,17 +7,17 @@
 			"requiresAuthentication": true
 		},
 		"create": {
-			"role:admin": true
+			"requiresAuthentication": true
 		},
 		"update": {
-			"role:admin": true
+			"requiresAuthentication": true
 		},
 		"delete": {
-			"role:admin": true
+			"requiresAuthentication": true
 		}
 	},
 	"accessControlList": {
 		"Read": "attributes.user, admin, customer_support",
-		"Write": "admin, customer_support"
+		"Write": "attributes.user, admin, customer_support"
 	}
 }

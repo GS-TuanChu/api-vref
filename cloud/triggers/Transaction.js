@@ -4,45 +4,73 @@ const Node = require('../helper/Node');
 const TokenTransaction = require('../helper/TokenTransaction');
 
 Parse.Cloud.triggers.add("afterSave", "Transaction", async function(request) {
+	var newObj = request.object;
+  	var oldObj = request.original;
+  	if ( oldObj ) return true; // ignore when update
+  	
 	try {
 		let campaign = await Campaign.get(request.object.get('campaign').id)
 		let maxMoney = campaign.get('amount')
 		let maxToken = campaign.get('amountToken')
-		let maxProduct = campaign.get('maxProduct')
+		let commission = campaign.get('commission')
+		let paid = campaign.get('paid')
+		let mine = campaign.get('mine')
+		let rootNode = campaign.get('rootNode')
 
-		campaign.increment("currentProduct");
-		await campaign.save(null, {useMasterKey:true});
-
-		let chainNode = [request.object.get('node').id]
-		let nodes = {}
-		for (let i=0; i<30; i++) {
-			const nodeId = chainNode[chainNode.length-1]
-			const node = await Node.get(nodeId)
-			nodes[nodeId] = node;
-			const prevNode = node.get('ref') ? node.get('ref').id : null
-			if ( !prevNode ) break;
-			chainNode.push(prevNode)
+		if ( paid+commission>maxMoney ) {
+			// log somewhere
+			return false;
 		}
 
-		for ( let i=0; i<chainNode.length; i++ ) {
-			let ratio = TokenTransaction.reward(chainNode.length, i)
-			let amount = (maxMoney*ratio)/maxProduct
+		let node = await Node.get(request.object.get('node').id)
+		let tmpChainNodeId = node.get("ref") || []
+		let tmpChainUserId = node.get("refUser") || []
+			tmpChainNodeId.push(request.object.get('node').id)
+			tmpChainUserId.push(request.object.get('user').id)
+
+		// Cut the chain to rootNode
+		let chainNodeId = [], chainUserId = [], found = false;
+		for (let i=0; i<tmpChainNodeId.length; i++) {
+			if ( tmpChainNodeId[i]==rootNode.id )
+				found = true;
+			if ( !found ) continue;
+			chainNodeId.push(tmpChainNodeId[i])
+			chainUserId.push(tmpChainUserId[i])
+		}
+
+		if ( mine ) { // if this is my campaign, I will not take award. Or replace by system's user ******
+			chainNodeId.shift();
+			chainUserId.shift();
+		}
+
+		chainNodeId.reverse();
+		chainUserId.reverse();
+		let totalPaid = 0;
+		for ( let i=0; i<chainNodeId.length; i++ ) { // need node detail to get user information
+			let currentNode = helper.createObject("Node", chainNodeId[i])
+			currentNode.set("user", helper.createObject(Parse.User, chainUserId[i]))
+
+			let ratio = TokenTransaction.reward(chainNodeId.length, i)
+			let amount = commission*ratio
 			let amountToken = 0
 			if ( amount<100 ) {
 				amount = 0
 				amountToken = (maxToken*ratio)/maxProduct
 			}
-
 			await TokenTransaction.create({
 				params: {
-					node: nodes[nodeId], 
+					node: currentNode, 
 					amount,
 					amountToken,
 					tx: request.object,
-					metadata: {n,i}
+					metadata: {n: chainNodeId.length,i},
+					campaign
 				}
 			})
+			totalPaid += amount
 		}
+		campaign.increment("paid", totalPaid);
+		await campaign.save(null, {useMasterKey:true});
 	} catch(e) {
 		console.log({e})
 	}

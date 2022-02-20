@@ -1,10 +1,10 @@
 {
 	"classLevelPermissions": {
 		"find": {
-			"requiresAuthentication": true
+			"*": true
 		},
 		"get": {
-			"requiresAuthentication": true
+			"*": true
 		},
 		"create": {
 			"requiresAuthentication": true
@@ -18,7 +18,7 @@
 		}
 	},
 	"accessControlList": {
-		"Read": "me, admin, customer_support",
-		"Write": "me, admin, customer_support"
+		"Read": "public",
+		"Write": "attributes.user, admin, customer_support"
 	}
 }

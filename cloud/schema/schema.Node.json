@@ -17,7 +17,7 @@
 		}
 	},
 	"accessControlList": {
-		"Read": "me, admin, customer_support",
+		"Read": "attributes.user, admin, customer_support",
 		"Write": "admin, customer_support"
 	}
 }

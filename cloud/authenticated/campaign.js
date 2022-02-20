@@ -1,5 +1,7 @@
 const helper = require('../helper');
 const Camp = require('../helper/Campaign')
+const Node = require('../helper/Node')
+const NodeCampaign = require('../helper/NodeCampaign')
 
 let publicFunction = {
 }
@@ -29,13 +31,13 @@ let cloudFunction = [{
 			},
 			error: "INVALID_AMOUNT"
 		},
-		maxProduct: {
+		commission: {
 			required: true,
 			type: Number,
 			options: val => {
 				return val>0
 			},
-			error: "INVALID_PRODUCT"
+			error: "INVALID_COMMISSION"
 		},
 		type: {
 			type: Number
@@ -47,10 +49,15 @@ let cloudFunction = [{
 				return val.length>5
 			},
 			error: "INVALID_NAME"
+		},
+		mine: {
+			required: true,
+			type: Boolean,
+			error: "INVALID_MINE"
 		}
 	},
 	async run(req) {
-		let { name, startDate, endDate, description, amount, maxProduct, type, product } = req.params;
+		let { name, startDate, endDate, description, amount, commission, type, product, network, mine } = req.params;
 
 		const Campaign = Parse.Object.extend("Campaign");
 		let campaign = new Campaign();
@@ -62,10 +69,30 @@ let cloudFunction = [{
 		campaign.set("endDate", new Date(endDate));
 		campaign.set("amount", amount);
 		campaign.set("amountToken", 0); // ********
-		campaign.set("maxProduct", maxProduct);
+		campaign.set("commission", commission);
+		campaign.set("mine", !!mine);
 		campaign.set("product", helper.createObject("Product", product));
 
-		return campaign.save(null,{ sessionToken: req.user.getSessionToken() }).then(res => ({ id: res.id }));
+		let rootNode = null;
+		if ( network ) { // have a root node
+			rootNode = await Node.get(network)
+			if ( rootNode ) campaign.set("rootNode", rootNode);
+		}
+
+		await campaign.save(null,{ sessionToken: req.user.getSessionToken() });
+		// create root node
+		if ( !rootNode ) {
+			rootNode = await Node.createNode({
+				params: {
+					campaign: campaign.id
+				},
+				user: req.user,
+			}, true)
+			campaign.set("rootNode", rootNode);
+		}
+		return campaign.save(null,{ sessionToken: req.user.getSessionToken() }).then(res => ({ id: res.id })).catch(e => {
+			console.log('campaign:create', e)
+		});
 	}
 }, {
 	name: 'campaign:createTx',
@@ -79,35 +106,38 @@ let cloudFunction = [{
 			error: "INVALID_CAMPAIGN"
 		}
 	},
-	async run(req) {
-		let { cid } = req.params;
-
-		let campaign = Camp.validCampaign(cid)
-		if ( !campaign ) return Promise.reject(new Parse.Error(Parse.Error.SCRIPT_FAILED, "INVALID_CAMPAIGN"));
-
-		// check user permission
-
-		let now = helper.now()
-		let message = [cid, now, req.user.id].join(',')
-		let encrypted = helper.encrypt(message)
-
-		return {
-			content: `trans:${cid}:${encrypted.iv}|${encrypted.content}`
-		};
+	async run(req) { // only the author can create transaction
+		return Camp.createTransaction(req);
 	}
 }, {
 	name: 'campaign:following',
 	fields: {
 	},
 	async run(req) {
-		let query = new Parse.Query("Node");
-		query.equalTo("user", req.user);
-		let nodes = await query.find({ sessionToken: req.user.getSessionToken() });
+		let { count } = req.params;
+
+		let nodes = await NodeCampaign.following(req.user)
 		let campaignIds = nodes ? nodes.map(n => n.get('campaign').id) : []
 
+		if ( count ) return { count: campaignIds.length }
+
+		// add paging ****
+		return nodes.map(n => n.get("campaign")).map(c => ({
+			id: c.id,
+			name: c.get('name'),
+			description: c.get('description'),
+			active: c.get('active'),
+			createdAt: c.get('createdAt').toISOString()
+		}))
+	}
+}, {
+	name: 'campaign:mine',
+	fields: {
+	},
+	async run(req) {
 		// add paging ****
 		let campQuery = new Parse.Query("Campaign");
-		campQuery.containedIn("objectId", campaignIds);
+		campQuery.equalTo("user", req.user);
 		campQuery.descending("createdAt");
 		let campaigns = await campQuery.find({ sessionToken: req.user.getSessionToken() });
 		return campaigns.map(c => ({

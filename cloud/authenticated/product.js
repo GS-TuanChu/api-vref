@@ -17,17 +17,25 @@ let cloudFunction = [{
 		},
 		description: {
 			type: String
+		},
+		price: {
+			type: Number,
+			options: val => {
+				return val>0
+			},
+			error: "INVALID_NAME"
 		}
 	},
 	async run(req) {
-		let { name, media, description } = req.params;
+		let { name, media, description, price } = req.params;
 		
 		const Product = Parse.Object.extend("Product");
 		let product = new Product();
 		product.set("name", name);
 		product.set("user", req.user);
 		product.set("description", description);
-		// product.set("media", media);
+		product.set("price", price);
+		product.set("media", media);
 
 		return product.save(null,{ sessionToken: req.user.getSessionToken() }).then(res => ({ id: res.id }));
 	}
@@ -44,6 +52,7 @@ let cloudFunction = [{
 		return products.map(p => ({
 			name: p.get('name'),
 			description: p.get('description'),
+			media: p.get('media'),
 			createdAt: p.get('createdAt').toISOString(),
 			id: p.id
 		}))

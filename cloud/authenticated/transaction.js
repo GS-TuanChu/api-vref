@@ -27,8 +27,10 @@ let cloudFunction = [{
 		let TxQuery = new Parse.Query("TokenTransaction");
 		TxQuery.equalTo("user", req.user);
 		TxQuery.descending("createdAt");
-		TxQuery.include("tx.campaign");
+		TxQuery.include("tx.campaign"); // get campaign info
+		console.log("user", req.user)
 		let trans = await TxQuery.find({ sessionToken: req.user.getSessionToken() });
+		console.log("trans", trans)
 		return trans.map(t => ({
 			amount: t.get('amount'),
 			amountToken: t.get('amountToken'),

@@ -1,5 +1,6 @@
 const crypto = require('crypto')
 const secretKey = 'vOVH6sdmpNWjRRIqCc7rdxs01lwHzfr3';
+const axios = require('axios').default;
 
 module.exports = {
 	now() {
@@ -40,6 +41,22 @@ module.exports = {
 	    const decipher = crypto.createDecipheriv('aes-256-ctr', secretKey, Buffer.from(hash.iv, 'hex'));
 	    const decrpyted = Buffer.concat([decipher.update(Buffer.from(hash.content, 'hex')), decipher.final()]);
 	    return decrpyted.toString();
+	},
+	formatPhone(phone) {
+		return phone.replace(/\D/g,'');
+	},
+	getPhoneFromFirebase(uid) {
+		return axios.get('https://us-central1-vinet-1927a.cloudfunctions.net/app/api/uid/'+uid, {
+			timeout: 10000,
+			responseType: 'json'
+		}).then(function (response) {
+			return response.data;
+		})
+		.catch(function (error) {
+			// handle error
+			console.log(error);
+			return false;
+		});
 	}
 }
 

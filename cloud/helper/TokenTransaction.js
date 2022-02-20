@@ -12,13 +12,13 @@ module.exports = {
 	},
 	reward(n, i) {
 		if ( n==0 || i>=n ) return 0;
-		if ( n==1 ) return 1;
+		if ( n==1 ) return 0.25;
 		if ( i==0 ) return 0.5;
 		if ( i==1 ) return (0.25 + 1/(2**n));
 		return (1/(2**(n-i+2)))
 	},
 	async create(req) {
-		let { node, amount, amountToken, tx, metadata } = req.params
+		let { node, amount, amountToken, tx, metadata, campaign } = req.params
 		
 		let existed = await this.getFromTx(tx, node)
 		if ( existed ) return Promise.reject(new Parse.Error(Parse.Error.SCRIPT_FAILED, "TX_ACTIVATED"));
@@ -31,6 +31,7 @@ module.exports = {
 		tokenTX.set("amount", amount);
 		tokenTX.set("amountToken", amountToken);
 		tokenTX.set("metadata", metadata);
+		tokenTX.set("campaign", campaign);
 
 		return tokenTX.save(null,{ useMasterKey: true }).then(res => ({ id: res.id }));
 	}

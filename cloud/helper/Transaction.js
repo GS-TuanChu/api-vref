@@ -10,13 +10,11 @@ module.exports = {
 		return query.first({ useMasterKey: true });
 	},
 	async createTransaction(req) {
-		let { cid, txid } = req.params;
+		let { cid, txid, nodeRef } = req.params;
+		if ( !nodeRef ) return Promise.reject(new Parse.Error(Parse.Error.SCRIPT_FAILED, "INVALID_NODE"));
 
 		let campaignRef = await Campaign.get(cid)
 		if ( !campaignRef || !campaignRef.get('active') ) return Promise.reject(new Parse.Error(Parse.Error.SCRIPT_FAILED, "INVALID_CAMPAIGN"));
-
-		let nodeRef = await Node.getFromUid(req.user.id, cid);
-		if ( !nodeRef ) return Promise.reject(new Parse.Error(Parse.Error.SCRIPT_FAILED, "NOT_IN_NETWORK"));
 
 		try {
 			let existsTrans = await this.get(campaignRef, txid);

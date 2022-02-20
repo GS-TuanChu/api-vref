@@ -58,9 +58,13 @@ for (let className of Object.keys(classRole)) {
 						: "";
 					break;
 				default:
-					let query = new Parse.Query(Parse.Role);
-					query.equalTo("name", name);
-					return query.first({ useMasterKey: true });
+					if ( name.indexOf("attributes.")===0 ) {
+						return request.object.attributes[name.replace("attributes.", "")];
+					} else {
+						let query = new Parse.Query(Parse.Role);
+						query.equalTo("name", name);
+						return query.first({ useMasterKey: true });
+					}
 					break;
 			}
 		}
@@ -91,8 +95,10 @@ for (let className of Object.keys(classRole)) {
 					if (participant)
 						if (p === "me" || p === "join") {
 							acl[`set${act}Access`](participant, true);
-						} else {
+						} else if ( participant.className=="_Role" ) {
 							acl[`setRole${act}Access`](participant, true);
+						} else if ( participant.className=="_User" ) {
+							acl[`set${act}Access`](participant, true);
 						}
 				}
 			}
