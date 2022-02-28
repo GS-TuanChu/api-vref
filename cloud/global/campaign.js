@@ -11,8 +11,10 @@ let cloudFunction = [{
 	},
 	async run(req) {
 		let { cid } = req.params;
+		let d = new Date();
 		let campQuery = new Parse.Query("Campaign");
 		campQuery.equalTo("active", true);
+		campQuery.greaterThan('endDate', d);
 		campQuery.descending("createdAt");
 		campQuery.include("product.media")
 		return campQuery.find();
@@ -78,9 +80,9 @@ let cloudFunction = [{
 		let topSeller = await NodeCampaign.topSeller(cid);
 		let topReferer = await NodeCampaign.topReferer(cid);
 		return { 
-			topSeller: topSeller.filter(tr => tr.get("networkBought")).map(ts => ({
+			topSeller: topSeller.filter(tr => tr.get("sold")).map(ts => ({
 				bought: ts.get("bought"),
-				networkBought: ts.get("networkBought"),
+				networkBought: ts.get("sold"),
 				fullname: ts.get("user").get("fullname"),
 				username: ts.get("user").get("username")
 			})), 

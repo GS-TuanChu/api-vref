@@ -6,6 +6,7 @@ Parse.Cloud.triggers.add("afterSave", "TokenTransaction", async function(request
   	if ( oldObj ) return true; // ignore when update
   	
 	try {
+		console.log("afterSave TokenTransaction", newObj.id);
 		let user = newObj.get('user')
 		let amount = newObj.get('amount')
 		let amountToken = newObj.get('amountToken')
@@ -17,9 +18,15 @@ Parse.Cloud.triggers.add("afterSave", "TokenTransaction", async function(request
 		await user.save(null, {useMasterKey:true});
 
 		let nc = await NodeCampaign.get(user, newObj.get('campaign'))
+		console.log("afterSave TokenTransaction", newObj.id, nc.id, metadata.i)
+		console.log("afterSave TokenTransaction", nc.id, nc.get("bought"), nc.get("increment"), nc.get("sold"))
 		if ( metadata.i==0 ) nc.increment("bought");
 		else nc.increment("networkBought");
-		if ( metadata.i==1 ) nc.increment("sold");
+		if ( metadata.i==1 ) {
+			if ( !nc.get("sold") ) nc.set("sold", 1)
+			else nc.increment("sold");
+		}
+		console.log("afterSave TokenTransaction", nc.id, nc.get("bought"), nc.get("increment"), nc.get("sold"))
 		await nc.save(null, {useMasterKey:true});
 	} catch(e) {
 		console.log({e})

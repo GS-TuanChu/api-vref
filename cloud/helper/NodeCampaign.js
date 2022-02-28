@@ -26,7 +26,7 @@ module.exports = {
 		let query = new Parse.Query("NodeCampaign");
 		query.equalTo("campaign", helper.createObject("Campaign", cid));
 		query.include("user");
-		query.descending("networkBought");
+		query.descending("sold");
 		query.limit(limit);
 		return query.find({ useMasterKey: true }).catch(e => false);
 	},
