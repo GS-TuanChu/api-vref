@@ -51,6 +51,7 @@ let cloudFunction = [{
 				joined: rootNode.get("child")+rootNode.get("grandchild"),
 				paid: camDetail.get("paid"),
 				contact: camDetail.get("contact"),
+				website: camDetail.get("website"),
 				buyCommission: camDetail.get("commission")/4,
 				referCommission: camDetail.get("commission")/4,
 				id: camDetail.id,

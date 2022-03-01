@@ -20,6 +20,12 @@ let cloudFunction = [{
 		description: {
 			type: String
 		},
+		website: {
+			type: String
+		},
+		contact: {
+			type: String
+		},
 		startDate: {
 			required: true
 		},
@@ -72,6 +78,8 @@ let cloudFunction = [{
 		campaign.set("commission", commission);
 		campaign.set("mine", !!mine);
 		campaign.set("product", helper.createObject("Product", product));
+		campaign.set("website", website);
+		campaign.set("contact", contact);
 
 		let rootNode = null;
 		if ( network ) { // have a root node
@@ -147,6 +155,21 @@ let cloudFunction = [{
 			active: c.get('active'),
 			createdAt: c.get('createdAt').toISOString()
 		}))
+	}
+}, {
+	name: 'campaign:leave',
+	fields: {
+		cid: {
+			required: true,
+			type: String,
+			error: "INVALID_CAMPAIGN"
+		}
+	},
+	async run(req) {
+		let nodeCamp = NodeCampaign.get(req.user, helper.createObject("Campaign", req.params.cid));
+		if ( !nodeCamp ) return Promise.reject(new Parse.Error(Parse.Error.SCRIPT_FAILED, "INVALID_CAMPAIGN"));
+		nodeCamp.set("active", false);
+		return nodeCamp.save(null,{ sessionToken: req.user.getSessionToken() }).then(res => ({ status: true }));
 	}
 }]
 

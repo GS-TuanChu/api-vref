@@ -6,6 +6,8 @@ module.exports = {
 		query.equalTo("user", user);
 		query.equalTo("campaign", campaign);
 		return query.first({ useMasterKey: true }).catch(e => false);
+
+		// check if user actually in campaign but no record in NodeCampaign yet
 	},
 	async assign(node, campaign, user) {
 		const NodeCampaign = Parse.Object.extend("NodeCampaign");

@@ -24,6 +24,13 @@ let cloudFunction = [{
 				return val>0
 			},
 			error: "INVALID_NAME"
+		},
+		contact: {
+			type: Number,
+			options: val => {
+				return val>5
+			},
+			error: "INVALID_CONTACT"
 		}
 	},
 	async run(req) {
@@ -36,6 +43,7 @@ let cloudFunction = [{
 		product.set("description", description);
 		product.set("price", price);
 		product.set("media", media);
+		product.set("contact", contact);
 
 		return product.save(null,{ sessionToken: req.user.getSessionToken() }).then(res => ({ id: res.id }));
 	}
@@ -53,6 +61,7 @@ let cloudFunction = [{
 			name: p.get('name'),
 			description: p.get('description'),
 			media: p.get('media'),
+			contact: p.get('contact'),
 			createdAt: p.get('createdAt').toISOString(),
 			id: p.id
 		}))
