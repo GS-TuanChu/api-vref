@@ -4,32 +4,14 @@ const helper = require('../helper');
 
 module.exports = {
 	async get(id) {
+		if ( !id ) return null;
 		let query = new Parse.Query("Node");
 		return query.get(id, { useMasterKey: true }).catch(e => false);
 	},
-	async getUserJoinedNode(user, campaign) {
-		let nodeCampaign = await NodeCampaign.get(user, campaign)
-		if ( nodeCampaign ) return nodeCampaign.get("node");
-
-		if ( !isNaN(campaign) )
-			campaign = Campaign.get(campaign)
-		// if ( !campaign ) return false; // checked ?
-		if ( !campaign || !campaign.get("rootNode") ) return false;
-		let campaignNode = campaign.get("rootNode").id;
-
-		let allNodes = []
-		let query = new Parse.Query("Node");
-		query.equalTo("user", user);
-		let nodes = await query.find({ useMasterKey: true });
-		if ( nodes )
-			for ( let node of nodes ) {
-				if ( node.get("ref") && node.get("ref").indexOf(campaignNode)!=-1 ) return node;
-			}
-		return false;
-	},
 	async nodeCode(user, campaign) {
-		let node = await this.getUserJoinedNode(user, campaign);
-		let joined = !!node;
+		let nodeCamp = await NodeCampaign.get(user, campaign, false); // if nodeCamp is not active, it's still ok, other people still can join
+		let joined = !!nodeCamp;
+		let node = joined ? nodeCamp.get("node") : null;
 		if ( !node ) node = campaign.get("rootNode");
 
 		return {
@@ -45,9 +27,11 @@ module.exports = {
 		if ( !campaignRef || ((!campaignRef.get('active') || ignoreActive) && campaignRef.get('user').id!=req.user.id) ) 
 			return Promise.reject(new Parse.Error(Parse.Error.SCRIPT_FAILED, "INVALID_CAMPAIGN"));
 
-		// check user already join network
-		let myNode = await this.getUserJoinedNode(req.user, campaignRef)
-		if ( myNode ) return Promise.reject(new Parse.Error(Parse.Error.SCRIPT_FAILED, "ALREADY_JOINED"));
+		// check user already join network *******
+		let myNodeCamp = await NodeCampaign.get(req.user, campaignRef, false)
+		if ( myNodeCamp ) {
+			return Promise.reject(new Parse.Error(Parse.Error.SCRIPT_FAILED, "ALREADY_JOINED"));
+		}
 
 		const Node = Parse.Object.extend("Node");
 		let node = new Node();
@@ -55,7 +39,7 @@ module.exports = {
 		node.set("active", true);
 
 		// check node ref still available
-		let parentNode = ref ? (await this.get(ref)) : null;
+		let parentNode = await this.get(ref);
 		if ( parentNode ) {
 			let chain = parentNode.get("ref") || []
 			chain.push(parentNode.id)
@@ -68,10 +52,9 @@ module.exports = {
 			node.set("parent", helper.createObject("Node", ref));
 		}
 
-		await node.save(null,{ sessionToken: req.user.getSessionToken() });
-		await NodeCampaign.assign(node, campaignRef, req.user);
+		let nodeCamp = await NodeCampaign.assign(node, campaignRef, req.user); // NodeCampaign.assign will save the node also
 
-		return node;
+		return nodeCamp.get("node");
 	},
 	async getNodes(direction, nodeId) {
 		let query = new Parse.Query("Node");

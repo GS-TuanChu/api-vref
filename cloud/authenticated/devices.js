@@ -23,8 +23,9 @@ let cloudFunction = [{
 		device.set("user", req.user);
 		device.set("deviceToken", token);
 		device.set("metadata", metadata);
+		device.set("loginSession", helper.md5(req.user.getSessionToken()));
 
-		return device.save(null,{ sessionToken: req.user.getSessionToken() }).then(res => ({ id: res.id }));
+		return device.save(null, { sessionToken: req.user.getSessionToken() }).then(res => ({ id: res.id }));
 	}
 }]
 

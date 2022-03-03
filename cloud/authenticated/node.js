@@ -19,7 +19,8 @@ let cloudFunction = [{
 	},
 	async run(req) {
 		let { cid } = req.params;
-		let nodeCampaign = await NodeCampaign.get(req.user, helper.createObject("Campaign", cid))
+		let nodeCampaign = await NodeCampaign.get(req.user, cid)
+		console.log({nodeCampaign})
 		if ( !nodeCampaign ) return Promise.reject(new Parse.Error(Parse.Error.SCRIPT_FAILED, "INVALID_CAMPAIGN"));
 
 		let [upLevel, downLevel] = await Promise.all([

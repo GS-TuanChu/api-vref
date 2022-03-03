@@ -42,6 +42,9 @@ module.exports = {
 	    const decrpyted = Buffer.concat([decipher.update(Buffer.from(hash.content, 'hex')), decipher.final()]);
 	    return decrpyted.toString();
 	},
+	md5(data) {
+		return crypto.createHash('md5').update(data).digest("hex");
+	},
 	formatPhone(phone) {
 		return phone.replace(/\D/g,'');
 	},

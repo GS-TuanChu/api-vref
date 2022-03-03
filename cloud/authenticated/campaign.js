@@ -26,6 +26,9 @@ let cloudFunction = [{
 		contact: {
 			type: String
 		},
+		network: {
+			type: String
+		},
 		startDate: {
 			required: true
 		},
@@ -63,7 +66,7 @@ let cloudFunction = [{
 		}
 	},
 	async run(req) {
-		let { name, startDate, endDate, description, amount, commission, type, product, network, mine } = req.params;
+		let { name, startDate, endDate, description, amount, commission, type, product, network, mine, website, contact } = req.params;
 
 		const Campaign = Parse.Object.extend("Campaign");
 		let campaign = new Campaign();
@@ -84,7 +87,7 @@ let cloudFunction = [{
 		let rootNode = null;
 		if ( network ) { // have a root node
 			rootNode = await Node.get(network)
-			if ( rootNode ) campaign.set("rootNode", rootNode);
+			if ( rootNode && rootNode.get("user").id==req.user.id ) campaign.set("rootNode", rootNode);
 		}
 
 		await campaign.save(null,{ sessionToken: req.user.getSessionToken() });
@@ -125,7 +128,8 @@ let cloudFunction = [{
 		let { count } = req.params;
 
 		let nodes = await NodeCampaign.following(req.user)
-		let campaignIds = nodes ? nodes.map(n => n.get('campaign').id) : []
+		nodes = nodes.filter(n => n.get("active"))
+		let campaignIds = nodes.map(n => n.get('campaign').id);
 
 		if ( count ) return { count: campaignIds.length }
 
@@ -166,10 +170,10 @@ let cloudFunction = [{
 		}
 	},
 	async run(req) {
-		let nodeCamp = NodeCampaign.get(req.user, helper.createObject("Campaign", req.params.cid));
+		let nodeCamp = await NodeCampaign.get(req.user, req.params.cid);
 		if ( !nodeCamp ) return Promise.reject(new Parse.Error(Parse.Error.SCRIPT_FAILED, "INVALID_CAMPAIGN"));
 		nodeCamp.set("active", false);
-		return nodeCamp.save(null,{ sessionToken: req.user.getSessionToken() }).then(res => ({ status: true }));
+		return nodeCamp.save(null,{ useMasterKey: true }).then(res => ({ status: true }));
 	}
 }]
 

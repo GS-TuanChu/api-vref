@@ -1,6 +1,7 @@
 const Transaction = require('../helper/Transaction');
 const Camp = require('../helper/Campaign')
 const Node = require('../helper/Node');
+const NodeCamp = require('../helper/NodeCampaign');
 
 let publicFunction = {}
 
@@ -27,16 +28,20 @@ let cloudFunction = [{
 
 		switch (type) {
 			case 'trans':
-				let nodeRef = await Node.getUserJoinedNode(req.user, campaign);
-				if ( !nodeRef ) {
+				let nodeCamp = await NodeCamp.get(req.user, campaign); // already filter active
+				let nodeRef = null;
+				if ( !nodeCamp ) {
 					nodeRef = await Node.createNode({
 						params: {
 							ref: campaign.get("rootNode").id,
 							campaign: cid
 						},
 						user: req.user
-					})
+					});
+					nodeCamp = await NodeCamp.assign(nodeRef, campaign, req.user);
 				}
+				nodeRef = nodeCamp.get("node");
+				console.log('scan:qrcode', { nodeRef })
 
 				return Transaction.createTransaction({
 					params: {

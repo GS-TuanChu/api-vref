@@ -1,4 +1,3 @@
-
 const helper = require('../helper');
 const User = require('../helper/User');
 const validatePhoneNumber = require('validate-phone-number-node-js'); 

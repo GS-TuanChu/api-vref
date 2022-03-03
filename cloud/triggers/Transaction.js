@@ -1,6 +1,7 @@
 const helper = require('../helper');
 const Campaign = require('../helper/Campaign');
 const Node = require('../helper/Node');
+const NodeCampaign = require('../helper/NodeCampaign');
 const TokenTransaction = require('../helper/TokenTransaction');
 
 Parse.Cloud.triggers.add("afterSave", "Transaction", async function(request) {
@@ -38,7 +39,7 @@ Parse.Cloud.triggers.add("afterSave", "Transaction", async function(request) {
 			chainUserId.push(tmpChainUserId[i])
 		}
 
-		if ( mine ) { // if this is my campaign, I will not take award. Or replace by system's user ******
+		if ( mine ) { // if this is my campaign, I will not take award
 			chainNodeId.shift();
 			chainUserId.shift();
 		}
@@ -46,9 +47,13 @@ Parse.Cloud.triggers.add("afterSave", "Transaction", async function(request) {
 		chainNodeId.reverse();
 		chainUserId.reverse();
 		let totalPaid = 0;
-		for ( let i=0; i<chainNodeId.length; i++ ) { // need node detail to get user information
-			let currentNode = helper.createObject("Node", chainNodeId[i])
-			currentNode.set("user", helper.createObject(Parse.User, chainUserId[i]))
+		for ( let i=0; i<chainNodeId.length; i++ ) {
+			let nodeCamp = await NodeCampaign.get(helper.createObject(Parse.User, chainUserId[i]), campaign, false);
+			if ( !nodeCamp ) continue; // nodeCamp must be exsited
+			let currentNode = nodeCamp.get("node");
+			if ( !nodeCamp.get("active") || !nodeCamp.get("node").get("active") ) { // if this node is not active, then transfer money to rootNode
+				currentNode = helper.createObject("Node", "RQ5BSKmmFH"); // fixed node, user DpF3DFbVp0 treasury@gostream.vn , campaign WAzbtikphz
+			}
 
 			let ratio = TokenTransaction.reward(chainNodeId.length, i)
 			let amount = commission*ratio
@@ -63,7 +68,7 @@ Parse.Cloud.triggers.add("afterSave", "Transaction", async function(request) {
 					amount,
 					amountToken,
 					tx: request.object,
-					metadata: {n: chainNodeId.length,i},
+					metadata: {n: chainNodeId.length, i},
 					campaign
 				}
 			})

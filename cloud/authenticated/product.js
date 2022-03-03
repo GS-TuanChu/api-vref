@@ -26,15 +26,15 @@ let cloudFunction = [{
 			error: "INVALID_NAME"
 		},
 		contact: {
-			type: Number,
+			type: String,
 			options: val => {
-				return val>5
+				return val.length>5
 			},
 			error: "INVALID_CONTACT"
 		}
 	},
 	async run(req) {
-		let { name, media, description, price } = req.params;
+		let { name, media, description, price, contact } = req.params;
 		
 		const Product = Parse.Object.extend("Product");
 		let product = new Product();
