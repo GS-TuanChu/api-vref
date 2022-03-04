@@ -47,25 +47,6 @@ let cloudFunction = [
         },
     },
     {
-        name: 'user:delete',
-        fields: {
-            uid: {
-                required: true,
-                type: String,
-                error: 'INVALID_USER',
-            },
-        },
-        async run(req) {
-            let { uid } = req.params;
-            const userQuery = new Parse.Query('User');
-            userQuery.equalTo('objectId', uid);
-            const user = await userQuery.first({
-                sessionToken: req.user.getSessionToken(),
-            });
-            return user.destroy({ sessionToken: req.user.getSessionToken() });
-        },
-    },
-    {
         name: 'user:editRole',
         fields: {
             uid: {
