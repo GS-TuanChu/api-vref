@@ -1,4 +1,5 @@
 const helper = require('../helper');
+const config = require('../config');
 const Campaign = require('../helper/Campaign');
 const Node = require('../helper/Node');
 const NodeCampaign = require('../helper/NodeCampaign');
@@ -22,7 +23,6 @@ Parse.Cloud.triggers.add("afterSave", "Transaction", async function(request) {
 			// log somewhere
 			return false;
 		}
-
 		let node = await Node.get(request.object.get('node').id)
 		let tmpChainNodeId = node.get("ref") || []
 		let tmpChainUserId = node.get("refUser") || []
@@ -51,17 +51,18 @@ Parse.Cloud.triggers.add("afterSave", "Transaction", async function(request) {
 			let nodeCamp = await NodeCampaign.get(helper.createObject(Parse.User, chainUserId[i]), campaign, false);
 			if ( !nodeCamp ) continue; // nodeCamp must be exsited
 			let currentNode = nodeCamp.get("node");
-			if ( !nodeCamp.get("active") || !nodeCamp.get("node").get("active") ) { // if this node is not active, then transfer money to rootNode
-				currentNode = helper.createObject("Node", "RQ5BSKmmFH"); // fixed node, user DpF3DFbVp0 treasury@gostream.vn , campaign WAzbtikphz
+			if ( !nodeCamp.get("active") || !nodeCamp.get("node").get("active") ) { // if this node is not active, then transfer money to user treasury
+				nodeCamp = await NodeCampaign.get(helper.createObject(Parse.User, config.treasuryUser.id), campaign);
+				currentNode = nodeCamp.get("node");
 			}
 
 			let ratio = TokenTransaction.reward(chainNodeId.length, i)
-			let amount = commission*ratio
+			let amount = parseInt(commission*ratio)
 			let amountToken = 0
-			if ( amount<100 ) {
-				amount = 0
-				amountToken = (maxToken*ratio)/maxProduct
-			}
+			// if ( amount<100 ) {
+			// 	amount = 0
+			// 	amountToken = (maxToken*ratio)/maxProduct
+			// }
 			await TokenTransaction.create({
 				params: {
 					node: currentNode, 
@@ -74,9 +75,25 @@ Parse.Cloud.triggers.add("afterSave", "Transaction", async function(request) {
 			})
 			totalPaid += amount
 		}
-		campaign.increment("paid", totalPaid);
+		let moneyLeft = commission - totalPaid;
+		console.log("transfer", moneyLeft, commission, totalPaid)
+		if ( moneyLeft>0 ) { // send all change to campaignbonus@gostream
+			let bonusNode = await NodeCampaign.get(helper.createObject(Parse.User, config.campaignBonusUser.id), campaign);
+		console.log("transfer 2", bonusNode)
+			await TokenTransaction.create({
+				params: {
+					node: bonusNode.get("node"), 
+					amount: moneyLeft,
+					amountToken: 0,
+					tx: request.object,
+					metadata: {n: chainNodeId.length, i: -1},
+					campaign
+				}
+			})
+		}
+		campaign.increment("paid", commission);
 		await campaign.save(null, {useMasterKey:true});
 	} catch(e) {
-		console.log({e})
+		console.log("afterSave Transaction", {e})
 	}
 })

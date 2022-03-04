@@ -1,23 +1,27 @@
+const config = require('../config');
+const helper = require('../helper');
+const Node = require('../helper/Node');
 
-// Parse.Cloud.triggers.add("afterSave", "Campaign", async function(request) {
-// 	// when add new campaign, add the root node of campaign
+Parse.Cloud.triggers.add("afterSave", "Campaign", async function(request) {
+	var newObj = request.object;
+  	var oldObj = request.original;
+  	if ( oldObj && oldObj.get("active")==false && newObj.get("active")==true ) {
+  		try {
+	  		let treasuryNode = await Node.createNode({
+				params: {
+					campaign: newObj.id
+				},
+				user: helper.createObject(Parse.User, config.treasuryUser.id),
+			});
 
-// 	var User = Parse.Object.extend(Parse.User);
-// 	var userRef = new User();
-// 	userRef.id = 'DpF3DFbVp0'; // treasury
-
-// 	let query = new Parse.Query("Node");
-//     query.equalTo("campaign", request.object);
-//     query.equalTo("user", userRef);
-//     let root = await query.first({ useMasterKey: true });
-//     if ( root ) return true;
-
-// 	const Node = Parse.Object.extend("Node");
-// 	let node = new Node();
-// 	node.set("ref", null);
-// 	node.set("user", userRef);
-// 	node.set("campaign", request.object);
-// 	node.set("transactionId", 'root');
-
-// 	return node.save(null,{ useMasterKey: true }).then(res => ({ id: res.id }));
-// })
+			let campaignBonusNode = await Node.createNode({
+				params: {
+					campaign: newObj.id
+				},
+				user: helper.createObject(Parse.User, config.campaignBonusUser.id),
+			});
+	  	} catch(e) {
+	  		console.log("afterSave Campaign", e)
+	  	}
+  	}
+})

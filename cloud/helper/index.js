@@ -1,6 +1,7 @@
 const crypto = require('crypto')
 const secretKey = 'vOVH6sdmpNWjRRIqCc7rdxs01lwHzfr3';
 const axios = require('axios').default;
+const config = require('../config');
 
 module.exports = {
 	now() {
@@ -60,6 +61,11 @@ module.exports = {
 			console.log(error);
 			return false;
 		});
+	},
+	getUserToken(user) {
+		if ( user.id==config.treasuryUser.id || user.id==config.campaignBonusUser.id )
+			return { useMasterKey: true };
+		else return { sessionToken: user.getSessionToken() };
 	}
 }
 

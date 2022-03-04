@@ -29,7 +29,7 @@ Parse.Cloud.triggers.add("afterSave", "TokenTransaction", async function(request
 		console.log("afterSave TokenTransaction", nc.id, nc.get("bought"), nc.get("increment"), nc.get("sold"))
 		await nc.save(null, {useMasterKey:true});
 	} catch(e) {
-		console.log({e})
+		console.log("afterSave TokenTransaction", {e})
 	}
 })
 
@@ -48,6 +48,6 @@ Parse.Cloud.triggers.add("afterDelete", "TokenTransaction", async function(reque
 		nc.decrement( metadata.i ? "networkBought" : "bought");
 		await nc.save(null, {useMasterKey:true});
 	} catch(e) {
-		console.log({e})
+		console.log("afterSave TokenTransaction", {e})
 	}
 })

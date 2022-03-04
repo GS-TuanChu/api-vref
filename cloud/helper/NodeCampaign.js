@@ -41,26 +41,29 @@ module.exports = {
 	},
 	async assign(node, campaign, user, reActive=true) {
 		// check exists first
+		console.log({user})
+		let userToken = helper.getUserToken(user);
+		console.log({userToken})
 		let query = new Parse.Query("NodeCampaign");
 		query.equalTo("user", user);
 		query.equalTo("campaign", campaign);
 		query.include("node");
-		let nodeCamp = await query.first({ useMasterKey: true }).catch(e => false);
+		let nodeCamp = await query.first(userToken).catch(e => false);
 		if ( nodeCamp ) { // if exists, check active
 			if ( reActive && nodeCamp.get("active")==false ) {
 				nodeCamp.set("active", true);
-				await nodeCamp.save(null, { useMasterKey: true })
+				await nodeCamp.save(null, userToken)
 			}
 			let oldNode = nodeCamp.get("node");
 			if ( reActive && oldNode.get("active")==false ) {
 				oldNode.set("active", true);
-				await oldNode.save(null, { useMasterKey: true })
+				await oldNode.save(null, userToken)
 			}
 			return nodeCamp
 		}
 
 		if ( !node.id ) { // sometime node is not saved yet
-			await node.save(null, { sessionToken: user.getSessionToken() })
+			await node.save(null, userToken)
 		}
 		const NodeCampaign = Parse.Object.extend("NodeCampaign");
 		let nc = new NodeCampaign();
@@ -68,7 +71,7 @@ module.exports = {
 		nc.set("campaign", campaign);
 		nc.set("user", user);
 
-		return nc.save(null, { sessionToken: user.getSessionToken() });
+		return nc.save(null, userToken);
 	},
 	async following(user) {
 		let query = new Parse.Query("NodeCampaign");

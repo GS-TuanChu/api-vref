@@ -13,8 +13,8 @@ module.exports = {
 	reward(n, i) {
 		if ( n==0 || i>=n ) return 0;
 		if ( n==1 ) return 0.25;
-		if ( i==0 ) return 0.5;
-		if ( i==1 ) return (0.25 + 1/(2**n));
+		if ( i==0 ) return 0.5; // buy directly from supplier
+		if ( i==1 ) return 0.25; // return (0.25 + 1/(2**n)); // direct referer take 25% comission
 		return (1/(2**(n-i+2)))
 	},
 	async create(req) {

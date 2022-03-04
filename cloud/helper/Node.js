@@ -11,7 +11,7 @@ module.exports = {
 	async nodeCode(user, campaign) {
 		let nodeCamp = await NodeCampaign.get(user, campaign, false); // if nodeCamp is not active, it's still ok, other people still can join
 		let joined = !!nodeCamp;
-		let node = joined ? nodeCamp.get("node") : null;
+		let node = joined ? nodeCamp.get("node") && nodeCamp.get("active") && nodeCamp.get("node").get("active") : null;
 		if ( !node ) node = campaign.get("rootNode");
 
 		return {
@@ -24,8 +24,9 @@ module.exports = {
 
 		// check campaign exists or still available
 		let campaignRef = await Campaign.get(campaign)
-		if ( !campaignRef || ((!campaignRef.get('active') || ignoreActive) && campaignRef.get('user').id!=req.user.id) ) 
+		if ( !campaignRef || ((!campaignRef.get('active') || ignoreActive) && campaignRef.get('user').id!=req.user.id) ) { // allow campaign creator create root node when campaign is not active yet
 			return Promise.reject(new Parse.Error(Parse.Error.SCRIPT_FAILED, "INVALID_CAMPAIGN"));
+		}
 
 		// check user already join network *******
 		let myNodeCamp = await NodeCampaign.get(req.user, campaignRef, false)

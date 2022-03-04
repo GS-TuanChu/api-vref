@@ -17,7 +17,7 @@ Parse.Cloud.triggers.add("afterSave", "Node", async function(request) {
 			}
 		}
 	} catch(e) {
-		console.log({e})
+		console.log("afterSave node", {e})
 	}
 })
 
@@ -32,6 +32,6 @@ Parse.Cloud.triggers.add("afterDelete", "Node", async function(request) {
 			}
 		}
 	} catch(e) {
-		console.log({e})
+		console.log("afterDelete node", {e})
 	}
 })
