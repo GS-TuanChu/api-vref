@@ -150,6 +150,7 @@ let cloudFunction = [{
 		// add paging ****
 		let campQuery = new Parse.Query("Campaign");
 		campQuery.equalTo("user", req.user);
+		campQuery.include("product");
 		campQuery.descending("createdAt");
 		let campaigns = await campQuery.find({ sessionToken: req.user.getSessionToken() });
 		return campaigns.map(c => ({
@@ -157,7 +158,10 @@ let cloudFunction = [{
 			name: c.get('name'),
 			description: c.get('description'),
 			active: c.get('active'),
-			createdAt: c.get('createdAt').toISOString()
+			createdAt: c.get('createdAt').toISOString(),
+			product: {
+				media: c.get("product").get("media")
+			}
 		}))
 	}
 }, {

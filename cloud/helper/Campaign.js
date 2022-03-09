@@ -37,5 +37,13 @@ module.exports = {
 			campaign: campaign.get("name"),
 			commission: campaign.get("commission")
 		};
+	},
+	async getBonusFund(cid) {
+		let query = new Parse.Query("TokenTransaction");
+		query.equalTo("campaign", helper.createObject("Campaign", cid));
+		let records = await query.find({ useMasterKey: true });
+		let totalAmount = 0;
+		records.forEach(r => totalAmount += r.get("amount"));
+		return totalAmount;
 	}
 }

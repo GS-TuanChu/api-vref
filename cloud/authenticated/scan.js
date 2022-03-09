@@ -26,6 +26,23 @@ let cloudFunction = [{
 		let campaign = await Camp.validCampaign(cid)
 		if ( !campaign ) return Promise.reject(new Parse.Error(Parse.Error.SCRIPT_FAILED, "INVALID_CAMPAIGN"));
 
+		if ( req.params.preview ) {
+			return {
+				campaign: {
+					name: camDetail.get("name"),
+					type: camDetail.get("type"),
+					description: camDetail.get("description"),
+					active: camDetail.get("active"),
+					amount: camDetail.get("amount"),
+					joined: rootNode.get("child")+rootNode.get("grandchild"),
+					product: {
+						media: camDetail.get("product").get("media"),
+						website: camDetail.get("product").get("website")
+					}
+				}
+			}
+		}
+
 		switch (type) {
 			case 'trans':
 				let nodeCamp = await NodeCamp.get(req.user, campaign); // already filter active

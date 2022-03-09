@@ -1,4 +1,6 @@
+const config = require('../config');
 const helper = require('../helper');
+const Campaign = require('../helper/Campaign')
 const Node = require('../helper/Node')
 const NodeCampaign = require('../helper/NodeCampaign')
 
@@ -36,8 +38,9 @@ let cloudFunction = [{
 		let campQuery = new Parse.Query("Campaign");
 		campQuery.include("product")
 		let camDetail = await campQuery.get(cid);
-		let node = req.user ? (await Node.nodeCode(req.user, camDetail)) : null
-		let rootNode = await Node.get(camDetail.get("rootNode").id)
+		let node = req.user ? (await Node.nodeCode(req.user, camDetail)) : null;
+		let rootNode = await Node.get(camDetail.get("rootNode").id);
+		let bonusFund = await Campaign.getBonusFund(cid);
 		return {
 			campaign: {
 				startDate: camDetail.get("startDate"),
@@ -59,7 +62,8 @@ let cloudFunction = [{
 				product: {
 					media: camDetail.get("product").get("media"),
 					website: camDetail.get("product").get("website")
-				}
+				},
+				bonusFund
 			},
 			node
 		};

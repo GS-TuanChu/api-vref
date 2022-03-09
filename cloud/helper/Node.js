@@ -10,8 +10,8 @@ module.exports = {
 	},
 	async nodeCode(user, campaign) {
 		let nodeCamp = await NodeCampaign.get(user, campaign, false); // if nodeCamp is not active, it's still ok, other people still can join
-		let joined = !!nodeCamp;
-		let node = joined ? nodeCamp.get("node") && nodeCamp.get("active") && nodeCamp.get("node").get("active") : null;
+		let joined = !!nodeCamp && nodeCamp.get("node")  && nodeCamp.get("active") && nodeCamp.get("node").get("active");
+		let node = joined ? nodeCamp.get("node") : null;
 		if ( !node ) node = campaign.get("rootNode");
 
 		return {
@@ -31,6 +31,10 @@ module.exports = {
 		// check user already join network *******
 		let myNodeCamp = await NodeCampaign.get(req.user, campaignRef, false)
 		if ( myNodeCamp ) {
+			if ( myNodeCamp.get("active")==false ) {
+				myNodeCamp.set("active", true);
+				return myNodeCamp.save(null, { useMasterKey: true });
+			}
 			return Promise.reject(new Parse.Error(Parse.Error.SCRIPT_FAILED, "ALREADY_JOINED"));
 		}
 
