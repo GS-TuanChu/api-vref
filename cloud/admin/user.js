@@ -7,11 +7,44 @@ let cloudFunction = [
         name: 'user:list',
         fields: {},
         async run(req) {
-            const userQuery = new Parse.Query('User');
+            const userQuery = new Parse.Query(Parse.User);
             const users = await userQuery.find({
-                sessionToken: req.user.getSessionToken(),
+                useMasterKey: true,
             });
-            return { users };
+
+            return await Promise.all(
+                users.map(async (user) => {
+                    const rolesQuery = new Parse.Query(Parse.Role);
+                    rolesQuery.equalTo('users', user);
+                    const roles = await rolesQuery.find({ useMasterKey: true });
+                    return {
+                        user,
+                        roles,
+                    };
+                })
+            );
+        },
+    },
+    {
+        name: 'user:getUserDetail',
+        fields: {
+            uid: {
+                required: true,
+                type: String,
+                error: 'INVALID_USER',
+            },
+        },
+        async run(req) {
+            let { uid } = req.params;
+            const userQuery = new Parse.Query('User');
+            userQuery.equalTo('objectId', uid);
+            const user = await userQuery.first({
+                useMasterKey: true,
+            });
+            const rolesQuery = new Parse.Query(Parse.Role);
+            rolesQuery.equalTo('users', user);
+            const roles = await rolesQuery.find({ useMasterKey: true });
+            return { user, roles };
         },
     },
     {
