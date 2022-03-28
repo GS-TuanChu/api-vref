@@ -48,7 +48,9 @@ Parse.Cloud.triggers.add("afterSave", "Transaction", async function(request) {
 		chainUserId.reverse();
 		let totalPaid = 0;
 		for ( let i=0; i<chainNodeId.length; i++ ) {
-			let nodeCamp = await NodeCampaign.get(helper.createObject(Parse.User, chainUserId[i]), campaign, false);
+			let user = helper.createObject(Parse.User, chainUserId[i]);
+			user.useMasterKey = true;
+			let nodeCamp = await NodeCampaign.get(user, campaign, false);
 			if ( !nodeCamp ) continue; // nodeCamp must be exsited
 			let currentNode = nodeCamp.get("node");
 			if ( !nodeCamp.get("active") || !nodeCamp.get("node").get("active") ) { // if this node is not active, then transfer money to user treasury

@@ -11,6 +11,7 @@ module.exports = {
 				console.log("NodeCampaign get error", e)
 			}
 		}
+		if ( !campaign.get("rootNode") ) return null;
 
 		// Get NodeCampaign record
 		let query = new Parse.Query("NodeCampaign");
@@ -29,10 +30,18 @@ module.exports = {
 
 		// if nodeCamp doesn't exists, check if user already in network, if yes, create NodeCampaign
 		let rootNode = campaign.get("rootNode").id;
-		let queryNode = new Parse.Query("Node");
-		queryNode.equalTo("user", user);
-		queryNode.equalTo("ref", rootNode);
-		let foundNode = await queryNode.first({ useMasterKey: true })
+		let foundNode = null;
+
+		// if I own rootNode
+		let queryNode1 = new Parse.Query("Node");
+		let node = await queryNode1.get(rootNode, { useMasterKey: true });
+		if ( node && node.get("user").id==user.id ) foundNode = node;
+		else {
+			let queryNode = new Parse.Query("Node");
+			queryNode.equalTo("user", user);
+			queryNode.equalTo("ref", rootNode);
+			foundNode = await queryNode.first({ useMasterKey: true })
+		}
 		if ( foundNode ) {
 			return this.assign(foundNode, campaign, user, false);
 		}

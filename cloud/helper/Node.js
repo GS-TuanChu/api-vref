@@ -10,7 +10,9 @@ module.exports = {
 	},
 	async nodeCode(user, campaign) {
 		let nodeCamp = await NodeCampaign.get(user, campaign, false); // if nodeCamp is not active, it's still ok, other people still can join
+		console.log({ nodeCamp })
 		let joined = !!nodeCamp && nodeCamp.get("node")  && nodeCamp.get("active") && nodeCamp.get("node").get("active");
+		console.log({ joined })
 		let node = joined ? nodeCamp.get("node") : null;
 		if ( !node ) node = campaign.get("rootNode");
 

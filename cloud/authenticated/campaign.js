@@ -179,6 +179,21 @@ let cloudFunction = [{
 		nodeCamp.set("active", false);
 		return nodeCamp.save(null,{ useMasterKey: true }).then(res => ({ status: true }));
 	}
+}, {
+	name: 'campaign:remove',
+	fields: {
+		cid: {
+			required: true,
+			type: String,
+			error: "INVALID_CAMPAIGN"
+		}
+	},
+	async run(req) {
+		let campaign = await Camp.get(req.params.cid);
+		if ( !campaign || campaign.get('user').id!=req.user.id || campaign.get('user').get("active") ) return {status: false};
+		await campaign.destroy({ useMasterKey: true });
+		return {status: true};
+	}
 }]
 
 module.exports = {

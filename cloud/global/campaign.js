@@ -18,7 +18,8 @@ let cloudFunction = [{
 		campQuery.equalTo("active", true);
 		campQuery.greaterThan('endDate', d);
 		campQuery.descending("createdAt");
-		campQuery.include("product.media")
+		campQuery.include("product.media");
+		campQuery.limit(10);
 		return campQuery.find();
 	}
 }, {

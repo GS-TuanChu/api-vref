@@ -20,7 +20,7 @@ let cloudFunction = [{
 		}
 	},
 	async run(req) {
-		if ( !req.user.get("phone") ) return Promise.reject(new Parse.Error(Parse.Error.SCRIPT_FAILED, "ACTIVE_PHONE_REQUIRED"));
+		// if ( !req.user.get("phone") ) return Promise.reject(new Parse.Error(Parse.Error.SCRIPT_FAILED, "ACTIVE_PHONE_REQUIRED"));
 		
 		let [type, cid, txid] = req.params.code.split(":")
 		let campaign = await Camp.validCampaign(cid)
@@ -29,15 +29,15 @@ let cloudFunction = [{
 		if ( req.params.preview ) {
 			return {
 				campaign: {
-					name: camDetail.get("name"),
-					type: camDetail.get("type"),
-					description: camDetail.get("description"),
-					active: camDetail.get("active"),
-					amount: camDetail.get("amount"),
-					joined: rootNode.get("child")+rootNode.get("grandchild"),
+					id: campaign.id,
+					name: campaign.get("name"),
+					type: campaign.get("type"),
+					description: campaign.get("description"),
+					active: campaign.get("active"),
+					amount: campaign.get("amount"),
 					product: {
-						media: camDetail.get("product").get("media"),
-						website: camDetail.get("product").get("website")
+						media: campaign.get("product").get("media"),
+						website: campaign.get("product").get("website")
 					}
 				}
 			}

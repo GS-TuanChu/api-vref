@@ -63,7 +63,7 @@ module.exports = {
 		});
 	},
 	getUserToken(user) {
-		if ( user.id==config.treasuryUser.id || user.id==config.campaignBonusUser.id )
+		if ( user.useMasterKey || user.id==config.treasuryUser.id || user.id==config.campaignBonusUser.id )
 			return { useMasterKey: true };
 		else return { sessionToken: user.getSessionToken() };
 	}
