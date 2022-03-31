@@ -61,6 +61,24 @@ let cloudFunction = [{
 		return {status: true}
 	}
 }, {
+	name: 'user:updateLanguage',
+	fields: {
+		language: {
+			required: true,
+			type: String,
+			options: val => {
+				return val=="vi" || val=="en";
+			},
+			error: "INVALID_LANGUAGE"
+		}
+	},
+	async run(req) {
+		let user = req.user;
+		user.set("lang", req.params.language)
+		await user.save(null, { sessionToken: req.user.getSessionToken() })
+		return {status: true}
+	}
+}, {
 	name: 'user:checkPhone',
 	fields: {
 		phone: {
