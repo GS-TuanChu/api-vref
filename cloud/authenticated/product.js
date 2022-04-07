@@ -25,6 +25,13 @@ let cloudFunction = [{
 			},
 			error: "INVALID_NAME"
 		},
+		category: {
+			type: String,
+			options: val => {
+				return val>5
+			},
+			error: "INVALID_CATEGORY"
+		},
 		contact: {
 			type: String,
 			options: val => {
@@ -34,7 +41,7 @@ let cloudFunction = [{
 		}
 	},
 	async run(req) {
-		let { name, media, description, price, contact } = req.params;
+		let { name, media, description, price, contact, category } = req.params;
 		
 		const Product = Parse.Object.extend("Product");
 		let product = new Product();
@@ -44,6 +51,7 @@ let cloudFunction = [{
 		product.set("price", price);
 		product.set("media", media);
 		product.set("contact", contact);
+		product.set("category", helper.createObject("Category", category));
 
 		return product.save(null,{ sessionToken: req.user.getSessionToken() }).then(res => ({ id: res.id }));
 	}

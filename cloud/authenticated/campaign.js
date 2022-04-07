@@ -2,6 +2,7 @@ const helper = require('../helper');
 const Camp = require('../helper/Campaign')
 const Node = require('../helper/Node')
 const NodeCampaign = require('../helper/NodeCampaign')
+const Product = require('../helper/Product')
 
 let publicFunction = {
 }
@@ -67,6 +68,10 @@ let cloudFunction = [{
 	},
 	async run(req) {
 		let { name, startDate, endDate, description, amount, commission, type, product, network, mine, website, contact } = req.params;
+		product = await Product.get(product);
+		if ( product.get("user").id!=req.user.id ) {
+			return Promise.reject(new Parse.Error(Parse.Error.SCRIPT_FAILED, "INVALID_USER"));
+		}
 
 		const Campaign = Parse.Object.extend("Campaign");
 		let campaign = new Campaign();
@@ -80,9 +85,10 @@ let cloudFunction = [{
 		campaign.set("amountToken", 0); // ********
 		campaign.set("commission", commission);
 		campaign.set("mine", !!mine);
-		campaign.set("product", helper.createObject("Product", product));
+		campaign.set("product", product);
 		campaign.set("website", website);
 		campaign.set("contact", contact);
+		campaign.set("category", product.get("category"));
 
 		let rootNode = null;
 		if ( network ) { // have a root node
