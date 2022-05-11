@@ -88,5 +88,27 @@ module.exports = {
 				return query.find({ useMasterKey: true }).then(nodes => nodes.map(node => extractInfo(node)));
 				break;
 		}
-	}
+	},
+  async getRefUsers(camDetail) {
+    let nodeCamp = await NodeCampaign.getNodes(camDetail)
+    const refUsers = []
+    let uids = [...nodeCamp.flat()]
+    uids = uids.filter((item, i, arr) => arr.indexOf(item) === i)
+    let userQuery = new Parse.Query('User')
+    userQuery.containedIn('objectId', uids)
+    let users = await userQuery.find({ useMasterKey: true })
+    const map = new Map()
+    users.forEach((user) => {
+        map.set(user.id, user.get('fullname'))
+    })
+    for (let uids of nodeCamp) {
+        let users = []
+        for (let uid of uids) {
+            let name = map.get(uid)
+            users.push(name)
+        }
+        refUsers.push(users)
+    }
+    return refUsers
+  }
 }

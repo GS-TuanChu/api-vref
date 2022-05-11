@@ -121,5 +121,28 @@ module.exports = {
 			return x<y ? 1 : -1;
 		});
 		return topReferer
+	},
+	async getNodes(campaign) {
+		if ( typeof campaign == "string" || !campaign.get("rootNode") ) {
+			try {
+				let campaignId = typeof campaign == "string" ? campaign : campaign.id;
+				campaign = await Campaign.get(campaignId);
+			} catch(e) {
+				console.log("NodeCampaign get error", e)
+			}
+		}
+		if ( !campaign.get("rootNode") ) return null;
+
+		// Get NodeCampaign record
+		let query = new Parse.Query("NodeCampaign");
+		query.equalTo("campaign", campaign);
+		query.include("node");
+		
+		let nodeCamps = await query.find({ useMasterKey: true }).catch(e => {
+			console.log("getNodes error", e)
+			return false
+		})
+		let nodes = nodeCamps.map(n => n.get("node").get("refUser"))
+		return nodes.filter(n => n != null && n.length > 1)
 	}
 }

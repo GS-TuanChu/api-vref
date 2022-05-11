@@ -94,6 +94,7 @@ let cloudFunction = [{
 		let camDetail = await campQuery.get(cid, {useMasterKey: true});
 		let node = req.user ? (await Node.nodeCode(req.user, camDetail)) : null;
 		let rootNode = await Node.get(camDetail.get("rootNode").id);
+		const refUsers = await Node.getRefUsers(camDetail)
 		let bonusFund = await Campaign.getBonusFund(cid);
 		return {
 			campaign: {
@@ -130,7 +131,8 @@ let cloudFunction = [{
 				},
 				rewardType: camDetail.get("rewardType"),
 				ended: camDetail.get("ended"),
-				bonusFund
+				bonusFund,
+				refUsers,
 			},
 			node
 		};
