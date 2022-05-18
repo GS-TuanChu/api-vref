@@ -1,5 +1,6 @@
 const NodeCampaign = require('../helper/NodeCampaign');
-const helper = require('../helper');
+const User = require('../helper/User');
+
 
 Parse.Cloud.triggers.add("afterSave", "TokenTransaction", async function(request) {
 	var newObj = request.object;
@@ -12,11 +13,13 @@ Parse.Cloud.triggers.add("afterSave", "TokenTransaction", async function(request
 		let amount = newObj.get('amount')
 		let amountToken = newObj.get('amountToken')
 		let metadata = newObj.get('metadata')
-		if ( amount!=0 )
-			user.increment("balance", amount);
+    	const usr = await User.getById(user.id)
+		if ( amount!=0 ) {
+      		usr.increment("balance", amount);
+		}
 		if ( amountToken!=0 )
-			user.increment("balanceToken", amountToken);
-		await user.save(null, {useMasterKey:true});
+			usr.increment("balanceToken", amountToken);
+		await usr.save(null, {useMasterKey:true});
 
 		let nc = await NodeCampaign.get(user, newObj.get('campaign'))
 		console.log("afterSave TokenTransaction", newObj.id, nc.id, metadata.i)

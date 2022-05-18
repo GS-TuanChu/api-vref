@@ -1,4 +1,5 @@
 const helper = require('../helper');
+const TokenTransaction = require("../helper/TokenTransaction")
 
 let publicFunction = {};
 
@@ -57,23 +58,26 @@ let cloudFunction = [
             },
         },
         async run(req) {
-            let { uid } = req.params;
+            let { uid, amount } = req.params;
             const userQuery = new Parse.Query('User');
             userQuery.equalTo('objectId', uid);
             const user = await userQuery.first({
                 sessionToken: req.user.getSessionToken(),
             });
-            const fields = [
-                'username',
-                'email',
-                'fullname',
-                'avatar',
-                'phone',
-                'bankAccount',
-                'balance',
-                'balanceToken',
-            ];
-            fields.forEach((f) => user.set(f, req.params[f]));
+            if (amount) {
+              await TokenTransaction.updateAmount(amount, user)
+            } else {
+              const fields = [
+                  'username',
+                  'email',
+                  'fullname',
+                  'avatar',
+                  'phone',
+                  'bankAccount',
+                  'balanceToken',
+              ];
+              fields.forEach((f) => user.set(f, req.params[f]));
+            }
             return user
                 .save(null, { sessionToken: req.user.getSessionToken() })
                 .then((res) => ({ id: res.id }));
