@@ -105,7 +105,11 @@ module.exports = {
         let users = []
         for (let uid of uids) {
             let name = map.get(uid)
-            users.push(name)
+            const u = {
+              id: uid,
+              name
+            }
+            users.push(u)
         }
         refUsers.push(users)
     }

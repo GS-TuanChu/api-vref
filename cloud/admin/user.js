@@ -1,5 +1,6 @@
 const helper = require('../helper');
 const TokenTransaction = require("../helper/TokenTransaction")
+const UserHelper = require("../helper/User")
 
 let publicFunction = {};
 
@@ -8,19 +9,27 @@ let cloudFunction = [
         name: 'user:list',
         fields: {},
         async run(req) {
+            const {limit, skip} = req.params
             const userQuery = new Parse.Query(Parse.User);
+            if (limit) userQuery.limit(limit)
+            if (skip) userQuery.skip(skip)
+            userQuery.ascending("email")
             const users = await userQuery.find({
                 useMasterKey: true,
             });
 
-            return await Promise.all(
+            return Promise.all(
                 users.map(async (user) => {
                     const rolesQuery = new Parse.Query(Parse.Role);
                     rolesQuery.equalTo('users', user);
                     const roles = await rolesQuery.find({ useMasterKey: true });
+                    const res = []
+                    for (let i = 0; i < roles.length; ++i) {
+                      res.push(roles[i].get('name'))
+                    }
                     return {
                         user,
-                        roles,
+                        roles: res,
                     };
                 })
             );
@@ -45,25 +54,26 @@ let cloudFunction = [
             const rolesQuery = new Parse.Query(Parse.Role);
             rolesQuery.equalTo('users', user);
             const roles = await rolesQuery.find({ useMasterKey: true });
-            return { user, roles };
+            const res = []
+            for (let i = 0; i < roles.length; ++i) {
+              res.push(roles[i].get('name'))
+            }
+            return { user, roles: res };
         },
     },
     {
         name: 'user:edit',
         fields: {
-            uid: {
+            id: {
                 required: true,
                 type: String,
                 error: 'INVALID_USER',
             },
         },
         async run(req) {
-            let { uid, amount } = req.params;
-            const userQuery = new Parse.Query('User');
-            userQuery.equalTo('objectId', uid);
-            const user = await userQuery.first({
-                sessionToken: req.user.getSessionToken(),
-            });
+            let t0 = performance.now()
+            let { id, amount } = req.params;
+            const user = await UserHelper.getById(id)
             if (amount) {
               await TokenTransaction.updateAmount(amount, user)
             } else {
@@ -78,15 +88,16 @@ let cloudFunction = [
               ];
               fields.forEach((f) => user.set(f, req.params[f]));
             }
-            return user
-                .save(null, { sessionToken: req.user.getSessionToken() })
-                .then((res) => ({ id: res.id }));
+            const res = await user.save(null, { sessionToken: req.user.getSessionToken() })
+            let t1 = performance.now()
+            console.log("#### ", t1 - t0)
+            return {id: res.id}
         },
     },
     {
         name: 'user:editRole',
         fields: {
-            uid: {
+            id: {
                 required: true,
                 type: String,
                 error: 'INVALID_USER',
@@ -121,9 +132,9 @@ let cloudFunction = [
             },
         },
         async run(req) {
-            let { uid, role, operation } = req.params;
+            let { id, role, operation } = req.params;
             const userQuery = new Parse.Query('User');
-            userQuery.equalTo('objectId', uid);
+            userQuery.equalTo('objectId', id);
             const user = await userQuery.first({
                 sessionToken: req.user.getSessionToken(),
             });
@@ -136,12 +147,38 @@ let cloudFunction = [
                         .getUsers({ sessionToken: req.user.getSessionToken() })
                         [operation](user);
                     roleRecord.save(null, {
-                        sessionToken: req.user.getSessionToken(),
+                      useMasterKey: true
                     });
                 }
             }
         },
     },
+
+    {
+      name: 'user:search',
+      fields: {},
+      async run(req) {
+        const { searchText } = req.params
+        const userQuery = new Parse.Query('User');
+        userQuery.fullText("username", searchText)
+        const users = await userQuery.find({useMasterKey: true})
+        return Promise.all(
+            users.map(async (user) => {
+                const rolesQuery = new Parse.Query(Parse.Role);
+                rolesQuery.equalTo('users', user);
+                const roles = await rolesQuery.find({ useMasterKey: true });
+                const res = []
+                for (let i = 0; i < roles.length; ++i) {
+                  res.push(roles[i].get('name'))
+                }
+                return {
+                    user,
+                    roles: res,
+                };
+            })
+        );
+      }
+    }
 ];
 
 module.exports = {
