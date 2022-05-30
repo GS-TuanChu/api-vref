@@ -45,10 +45,11 @@ let cloudFunction = [
         fields: {},
         async run(req) {
             const campQuery = new Parse.Query('Campaign')
+            campQuery.equalTo('active', true)
             const campaigns = await campQuery.find({
                 sessionToken: req.user.getSessionToken(),
             })
-            return { campaigns }
+          return { campaigns }
         },
     },
     {
@@ -198,6 +199,7 @@ let cloudFunction = [
             const campaign = await Camp.get(cid)
             if (campaign) {
                 const fields = [
+                    'active',
                     'description',
                     'startDate',
                     'endDate',
@@ -210,7 +212,6 @@ let cloudFunction = [
                     'paid',
                     'contact',
                     'website',
-                    'product',
                 ]
                 fields.forEach((f) => campaign.set(f, req.params[f]))
                 return campaign
@@ -242,6 +243,18 @@ let cloudFunction = [
                 })
         },
     },
+  {
+      name: 'campaign:search',
+      fields: {},
+      async run(req) {
+        const { searchText } = req.params
+        const campQuery = new Parse.Query('Campaign');
+        campQuery.fullText("name", searchText)
+        const campaigns = await campQuery.find({useMasterKey: true})
+        console.log("#### ", campaigns)
+        return { campaigns }
+      }
+  }
 ]
 
 module.exports = {
