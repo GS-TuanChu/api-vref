@@ -1,6 +1,7 @@
 const helper = require('../helper')
 const Camp = require('../helper/Campaign')
 const Node = require('../helper/Node')
+const TxTransaction = require('../helper/TokenTransaction')
 
 let publicFunction = {}
 
@@ -21,7 +22,6 @@ let cloudFunction = [
         },
         async run(req) {
             let { status, cid } = req.params
-
             let campQuery = new Parse.Query('Campaign')
             let campaign = await campQuery.get(cid, {
                 sessionToken: req.user.getSessionToken(),
@@ -251,11 +251,73 @@ let cloudFunction = [
         const campQuery = new Parse.Query('Campaign');
         campQuery.fullText("name", searchText)
         const campaigns = await campQuery.find({useMasterKey: true})
-        console.log("#### ", campaigns)
         return { campaigns }
+      }
+  },
+  {
+      name: 'campaign:buyers',
+      fields: {
+        cid: {
+            required: true,
+            type: String,
+            options: (val) => {
+                return val.length > 5
+            },
+            error: 'INVALID_CAMPAIGN',
+        },
+      },
+      async run(req) {
+        let { cid } = req.params
+        const txTransactionQuery = new Parse.Query('TokenTransaction')
+        txTransactionQuery.include('node')
+        txTransactionQuery.include('user')
+        txTransactionQuery.include('campaign')
+        txTransactionQuery.equalTo('campaign', new Parse.Object('Campaign', { id: cid }))
+        const txTrans = await txTransactionQuery.find({ useMasterKey: true })
+        const res = []
+        const promises = []
+        const newTxTrans = txTrans.filter((txTran, index, self) => index === self.findIndex(tx => tx.get('node').id === txTran.get('node').id))
+        newTxTrans.forEach(txTran => {
+          const node = txTran.get('node')
+          const nodes = []
+          promises.push(getRootParentNode(node, nodes, res, txTransactionQuery))
+        })
+        await Promise.allSettled(promises)
+        return res
       }
   }
 ]
+  async function getRootParentNode(node, nodes, res, txTransactionQuery) {
+    const nodeQuery = new Parse.Query("Node")
+    nodeQuery.include("user")
+    nodeQuery.equalTo("objectId", node.id)
+    const Node = await nodeQuery.first({ useMasterKey: true })
+    const parent = Node.get('parent')
+    const userObj = Node.get("user")
+    txTransactionQuery.equalTo('node', new Parse.Object('Node', { id: node.id }))
+    txTransactionQuery.equalTo('user', new Parse.Object('_User', { id: userObj.id }))
+    txTransactionQuery.greaterThan('amount', 0)
+    const tx = await txTransactionQuery.find({ useMasterKey: true })
+    let amount = 0
+    tx.forEach(t => amount += t.get('amount'))
+    const responseObj = {}
+    if (!parent) {
+      responseObj.id = userObj.id
+      responseObj.name = userObj.get("fullname") || userObj.get("username")
+      responseObj.amount = amount
+      nodes.push(responseObj)
+      nodes.reverse()
+      res.push(nodes)
+    }
+    else {
+      responseObj.id = userObj.id
+      responseObj.name = userObj.get("fullname") || userObj.get("username")
+      responseObj.amount = amount
+      nodes.push(responseObj)
+      return getRootParentNode(parent, nodes, res, txTransactionQuery)
+    }
+  }
+
 
 module.exports = {
     publicFunction,
