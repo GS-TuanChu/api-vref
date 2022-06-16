@@ -13,12 +13,12 @@ let cloudFunction = [
             const userQuery = new Parse.Query(Parse.User);
             if (limit) userQuery.limit(limit)
             if (skip) userQuery.skip(skip)
-            userQuery.ascending("email")
+            userQuery.ascending("username")
+            let total = await UserHelper.getTotalUsers(userQuery)
             const users = await userQuery.find({
                 useMasterKey: true,
             });
-
-            return Promise.all(
+            const results = await Promise.all(
                 users.map(async (user) => {
                     const rolesQuery = new Parse.Query(Parse.Role);
                     rolesQuery.equalTo('users', user);
@@ -33,6 +33,7 @@ let cloudFunction = [
                     };
                 })
             );
+            return { users: results, total }
         },
     },
     {

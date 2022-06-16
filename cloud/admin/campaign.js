@@ -1,7 +1,7 @@
 const helper = require('../helper')
 const Camp = require('../helper/Campaign')
 const Node = require('../helper/Node')
-const TxTransaction = require('../helper/TokenTransaction')
+const TokenTx = require('../helper/TokenTransaction')
 
 let publicFunction = {}
 
@@ -268,56 +268,26 @@ let cloudFunction = [
       },
       async run(req) {
         let { cid } = req.params
-        const txTransactionQuery = new Parse.Query('TokenTransaction')
-        txTransactionQuery.include('node')
-        txTransactionQuery.include('user')
-        txTransactionQuery.include('campaign')
-        txTransactionQuery.equalTo('campaign', new Parse.Object('Campaign', { id: cid }))
-        const txTrans = await txTransactionQuery.find({ useMasterKey: true })
+        const tokenTxQuery = new Parse.Query('TokenTransaction')
+        tokenTxQuery.include('node')
+        tokenTxQuery.include('user')
+        tokenTxQuery.include('campaign')
+        tokenTxQuery.equalTo('campaign', new Parse.Object('Campaign', { id: cid }))
+        const txTrans = await tokenTxQuery.find({ useMasterKey: true })
         const res = []
         const promises = []
         const newTxTrans = txTrans.filter((txTran, index, self) => index === self.findIndex(tx => tx.get('node').id === txTran.get('node').id))
-        newTxTrans.forEach(txTran => {
-          const node = txTran.get('node')
+        const txTransLen = newTxTrans.length
+        for (let i = 0; i < txTransLen; ++i ) {
+          const node = newTxTrans[i].get('node')
           const nodes = []
-          promises.push(getRootParentNode(node, nodes, res, txTransactionQuery))
-        })
+          promises.push(TokenTx.getParentNode(node, nodes, res, tokenTxQuery))
+        }
         await Promise.allSettled(promises)
         return res
       }
   }
 ]
-  async function getRootParentNode(node, nodes, res, txTransactionQuery) {
-    const nodeQuery = new Parse.Query("Node")
-    nodeQuery.include("user")
-    nodeQuery.equalTo("objectId", node.id)
-    const Node = await nodeQuery.first({ useMasterKey: true })
-    const parent = Node.get('parent')
-    const userObj = Node.get("user")
-    txTransactionQuery.equalTo('node', new Parse.Object('Node', { id: node.id }))
-    txTransactionQuery.equalTo('user', new Parse.Object('_User', { id: userObj.id }))
-    txTransactionQuery.greaterThan('amount', 0)
-    const tx = await txTransactionQuery.find({ useMasterKey: true })
-    let amount = 0
-    tx.forEach(t => amount += t.get('amount'))
-    const responseObj = {}
-    if (!parent) {
-      responseObj.id = userObj.id
-      responseObj.name = userObj.get("fullname") || userObj.get("username")
-      responseObj.amount = amount
-      nodes.push(responseObj)
-      nodes.reverse()
-      res.push(nodes)
-    }
-    else {
-      responseObj.id = userObj.id
-      responseObj.name = userObj.get("fullname") || userObj.get("username")
-      responseObj.amount = amount
-      nodes.push(responseObj)
-      return getRootParentNode(parent, nodes, res, txTransactionQuery)
-    }
-  }
-
 
 module.exports = {
     publicFunction,

@@ -53,5 +53,15 @@ module.exports = {
 		let totalAmount = 0;
 		records.forEach(r => totalAmount += r.get("amount"));
 		return totalAmount;
-	}
+	},
+  async getTotalCampaign(campQuery) {
+    const pipeline = [{
+      group: {
+        objectId: "$objectId",
+        n: { $sum: 1 },
+      }
+    }]
+    const result = await campQuery.aggregate(pipeline)
+    return result[0].n
+  }
 }

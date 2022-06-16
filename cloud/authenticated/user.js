@@ -123,6 +123,48 @@ let cloudFunction = [{
 	async run(req) {
 		
 	}
+},
+{
+	name: 'user:total',
+	fields: {
+	},
+	async run() {
+    const userQuery = new Parse.Query(Parse.User);
+    let total = await User.getTotalUsers(userQuery)
+    return { total }
+	}
+}, {
+  name: 'user:getByRange',
+  fields: {},
+  async run(req) {
+    const { fromDate, toDate } = req.params
+    const userQuery = new Parse.Query(Parse.User)
+    userQuery.limit(1000)
+    userQuery.ascending('createdAt')
+    if (fromDate && toDate) {
+      userQuery.greaterThanOrEqualTo('createdAt', fromDate)
+      userQuery.lessThanOrEqualTo('createdAt', toDate)
+    } else {
+      userQuery.greaterThan('createdAt', { $relativeTime: '7 days ago' })
+    }
+    const users = await userQuery.find({ sessionToken: req.user.getSessionToken() })
+    const dates = []
+    const counts = []
+    users.forEach((current, index, self) => {
+      const start = current.get('createdAt')
+      start.setHours(0,0,0,0)
+      const end = new Date(start)
+      end.setDate(end.getDate() + 1)
+      const temp = self.filter(
+        (tx) => tx.get('createdAt') >= start && tx.get('createdAt') <= end
+      )
+      self.splice(0, temp.length - 1)
+      const date = helper.formatDate(start)
+      dates.push(date)
+      counts.push(temp.length)
+    })
+    return { dates, counts }
+  }
 }]
 
 module.exports = {

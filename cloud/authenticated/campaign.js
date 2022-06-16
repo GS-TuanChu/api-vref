@@ -243,7 +243,70 @@ let cloudFunction = [{
 		await campaign.destroy({ useMasterKey: true });
 		return {status: true};
 	}
-}]
+},
+  {
+    name: 'campaign:total',
+    fields: {
+    },
+    async run() {
+      const campQuery = new Parse.Query("Campaign");
+      let total = await Camp.getTotalCampaign(campQuery)
+      return { total }
+    }
+  },{
+    name: 'campaign:getTransactions',
+    fields: {
+      cid: {
+        required: true,
+        type: String,
+        error: "INVALID_CAMPAIGN"
+      }
+    },
+    async run(req) {
+      const { cid, fromDate, toDate } = req.params
+      const transactionQuery = new Parse.Query("Transaction")
+      transactionQuery.limit(1000)
+      transactionQuery.include("campaign")
+      transactionQuery.ascending('createdAt')
+      transactionQuery.equalTo('campaign', new Parse.Object('Campaign', { id: cid }))
+      if (fromDate && toDate) {
+        transactionQuery.greaterThanOrEqualTo('createdAt', fromDate)
+        transactionQuery.lessThanOrEqualTo('createdAt', toDate)
+      } else {
+        transactionQuery.greaterThan('createdAt', { $relativeTime: '7 days ago' })
+      }
+      const dates = []
+      const months = []
+      const counts = []
+      const memo = new Map()
+      const monthCounts = []
+      const transactions = await transactionQuery.find({ sessionToken: req.user.getSessionToken() })
+      transactions.forEach((current, index, self) => {
+        const start = current.get('createdAt')
+        start.setHours(0,0,0,0)
+        const end = new Date(start)
+        end.setDate(end.getDate() + 1)
+        const startMonth = start.getMonth() + 1
+        const temp = self.filter(
+          (tx) => tx.get('createdAt') >= start && tx.get('createdAt') <= end
+        )
+        self.splice(0, temp.length - 1)
+        const date = helper.formatDate(start)
+        dates.push(date)
+        counts.push(temp.length)
+        if (memo.get(startMonth) != undefined) {
+          memo.set(startMonth, memo.get(startMonth) + temp.length)
+        } else {
+          memo.set(startMonth, temp.length)
+        }
+      })
+      for (const [month, quantity] of memo.entries()) {
+        months.push(helper.formatMonth(month))
+        monthCounts.push(quantity)
+      }
+      return { transactions, dates, counts, monthCounts, months }
+    }
+  }]
 
 module.exports = {
 	publicFunction, cloudFunction

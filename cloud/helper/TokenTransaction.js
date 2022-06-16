@@ -55,5 +55,48 @@ module.exports = {
       amount
     }
     return this.create({params}).then(res => ({ id: res.id }))
+  },
+  async getParentNode(node, nodes, res, tokenTxQuery) {
+    let id = node.id
+    while(id) {
+      let responseObj = {}
+      const nodeQuery = new Parse.Query("Node")
+      nodeQuery.include("user")
+      nodeQuery.equalTo("objectId", id)
+      const Node = await nodeQuery.first({ useMasterKey: true })
+      const parent = Node.get('parent')
+      const userObj = Node.get("user")
+      tokenTxQuery.equalTo('node', new Parse.Object('Node', { id: node.id }))
+      tokenTxQuery.equalTo('user', new Parse.Object('_User', { id: userObj.id }))
+      tokenTxQuery.greaterThan('amount', 0)
+      const tx = await tokenTxQuery.find({ useMasterKey: true })
+      let amount = 0
+      tx.forEach(t => amount += t.get('amount'))
+      if (!parent) {
+        responseObj.id = userObj.id
+        responseObj.name = userObj.get("fullname") || userObj.get("username")
+        responseObj.amount = amount
+      nodes.push(responseObj)
+      break
+      }
+      responseObj.id = userObj.id
+      responseObj.name = userObj.get("fullname") || userObj.get("username")
+      responseObj.amount = amount
+      nodes.push(responseObj)
+      id = parent.id
+    }
+    nodes.reverse()
+    res.push(nodes)
+  },
+  async getTotalTokenTx(tokenTxQuery) {
+    tokenTxQuery.ascending('createdAt')
+    const pipeline = [{
+      group: {
+        objectId: "$objectId",
+        n: { $sum: 1 },
+      }
+    }]
+    const result = await tokenTxQuery.aggregate(pipeline)
+    return result[0].n
   }
 }
