@@ -6,5 +6,6 @@ module.exports = {
 	campaignBonusUser: { // bonus fund of a campaign
 		id: "70d3i68Zac",
 		email: "campaignbonus@gostream.co"
-	}
+	},
+	scanUrl: 'http://viref.net/scan/'
 }

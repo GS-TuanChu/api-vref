@@ -1,5 +1,6 @@
 const helper = require('../helper');
 const User = require('../helper/User');
+const UserBalance = require('../helper/UserBalance');
 const validatePhoneNumber = require('validate-phone-number-node-js'); 
 
 let publicFunction = {
@@ -14,6 +15,7 @@ let cloudFunction = [{
 		let query = new Parse.Query(Parse.User);
 		query.equalTo("objectId", req.user.id);
 		let user = await query.first({ sessionToken: req.user.getSessionToken() });
+		let balances = await UserBalance.get(user);
 		return {
 			id: user.id,
 			username: user.get('username'),
@@ -24,7 +26,8 @@ let cloudFunction = [{
 			bankAccount: user.get('bankAccount'),
 			createdAt: user.get('createdAt').toISOString(),
 			balance: user.get('balance'),
-			balanceToken: user.get('balanceToken')
+			balanceToken: user.get('balanceToken'),
+			balances
 		}
 	}
 }, {
@@ -34,7 +37,7 @@ let cloudFunction = [{
 			required: true,
 			type: String,
 			options: val => {
-				return val.length>5
+				return val.length>2
 			},
 			error: "INVALID_NAME"
 		}
@@ -75,6 +78,24 @@ let cloudFunction = [{
 	async run(req) {
 		let user = req.user;
 		user.set("lang", req.params.language)
+		await user.save(null, { sessionToken: req.user.getSessionToken() })
+		return {status: true}
+	}
+}, {
+	name: 'user:updateAvatar',
+	fields: {
+		avatar: {
+			required: true,
+			type: String,
+			options: val => {
+				return val.indexOf("http")===0;
+			},
+			error: "INVALID_AVATAR"
+		}
+	},
+	async run(req) {
+		let user = req.user;
+		user.set("avatar", req.params.avatar)
 		await user.save(null, { sessionToken: req.user.getSessionToken() })
 		return {status: true}
 	}

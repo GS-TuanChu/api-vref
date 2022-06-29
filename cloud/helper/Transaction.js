@@ -28,8 +28,11 @@ module.exports = {
 			let message = helper.decrypt({iv, content})
 			let now = helper.now()
 			let [cid2, now2, uid2] = message.split(',')
-			if ( cid!=cid2 || now-parseInt(now2)>3*60*60 ) // 3 hours
+			console.log("Hello", message, req)
+			if ( cid!=cid2 ) // 3 hours
 				return Promise.reject(new Parse.Error(Parse.Error.SCRIPT_FAILED, "INVALID_TRANSACTION")); // check user ****
+			else if ( now-parseInt(now2)>3*60*60 )
+				return Promise.reject(new Parse.Error(Parse.Error.SCRIPT_FAILED, "CODE_EXPIRED")); // check user ****
 		} else {
 			// call 3rd party api to verify txid *****
 		}

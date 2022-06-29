@@ -1,4 +1,5 @@
 const NodeCampaign = require('../helper/NodeCampaign');
+const helper = require('../helper');
 
 Parse.Cloud.triggers.add("afterSave", "TokenTransaction", async function(request) {
 	var newObj = request.object;

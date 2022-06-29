@@ -66,6 +66,11 @@ module.exports = {
 		if ( user.useMasterKey || user.id==config.treasuryUser.id || user.id==config.campaignBonusUser.id )
 			return { useMasterKey: true };
 		else return { sessionToken: user.getSessionToken() };
+	},
+	sleep(ms) {
+		return new Promise((resolve) => {
+			setTimeout(resolve, ms);
+		});
 	}
 }
 

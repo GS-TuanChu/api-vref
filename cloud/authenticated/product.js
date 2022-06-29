@@ -25,10 +25,17 @@ let cloudFunction = [{
 			},
 			error: "INVALID_NAME"
 		},
+		// currency: {
+		// 	type: String,
+		// 	options: val => {
+		// 		return val.length>3
+		// 	},
+		// 	error: "INVALID_CURRENCY"
+		// },
 		category: {
 			type: String,
 			options: val => {
-				return val>5
+				return val.length>5
 			},
 			error: "INVALID_CATEGORY"
 		},
@@ -41,7 +48,7 @@ let cloudFunction = [{
 		}
 	},
 	async run(req) {
-		let { name, media, description, price, contact, category } = req.params;
+		let { name, media, description, price, contact, category, currency } = req.params;
 		
 		const Product = Parse.Object.extend("Product");
 		let product = new Product();
@@ -49,6 +56,7 @@ let cloudFunction = [{
 		product.set("user", req.user);
 		product.set("description", description);
 		product.set("price", price);
+		product.set("currency", helper.createObject("Currency", currency || "UyOZMa1MbQ"));
 		product.set("media", media);
 		product.set("contact", contact);
 		product.set("category", helper.createObject("Category", category));
@@ -70,6 +78,7 @@ let cloudFunction = [{
 			description: p.get('description'),
 			media: p.get('media'),
 			contact: p.get('contact'),
+			price: p.get('price'),
 			createdAt: p.get('createdAt').toISOString(),
 			id: p.id
 		}))

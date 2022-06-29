@@ -1,8 +1,13 @@
 const helper = require('../helper');
+const config = require('../config');
 
 module.exports = {
 	async get(id) {
 		let query = new Parse.Query("Campaign");
+		query.include("product.media");
+		query.include("currency");
+		query.include("user");
+		query.include("category");
 		return query.get(id, { useMasterKey: true });
 	},
 	async validCampaign(id) {
@@ -33,14 +38,17 @@ module.exports = {
 		let encrypted = helper.encrypt(message)
 
 		return {
-			content: `trans:${cid}:${encrypted.iv}|${encrypted.content}`,
+			content: `${config.scanUrl}trans:${cid}:${encrypted.iv}|${encrypted.content}`,
 			campaign: campaign.get("name"),
-			commission: campaign.get("commission")
+			commission: campaign.get("commission"),
+			rewardType: campaign.get("rewardType"),
+			amount: campaign.get("amount"),
+			paid: campaign.get("paid")
 		};
 	},
 	async getBonusFund(cid) {
 		let query = new Parse.Query("TokenTransaction");
-		query.equalTo("campaign", helper.createObject("Campaign", cid));
+		query.equalTo("campaign", helper.createObject("Campaign", cid)); // **** wrong, filter by BonusFund
 		let records = await query.find({ useMasterKey: true });
 		let totalAmount = 0;
 		records.forEach(r => totalAmount += r.get("amount"));

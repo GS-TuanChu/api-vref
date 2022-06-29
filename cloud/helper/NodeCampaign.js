@@ -86,9 +86,11 @@ module.exports = {
 		let query = new Parse.Query("NodeCampaign");
 		query.equalTo("user", user);
 		query.include("campaign");
+		query.include("campaign.product");
+		query.include("campaign.currency");
 		return query.find({ sessionToken: user.getSessionToken() }).catch(e => false);
 	},
-	async topSeller(cid, limit=10) {
+	async topSeller(cid, limit=10) { // remove root node
 		let query = new Parse.Query("NodeCampaign");
 		query.equalTo("campaign", helper.createObject("Campaign", cid));
 		query.include("user");

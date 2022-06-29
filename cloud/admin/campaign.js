@@ -96,7 +96,7 @@ let cloudFunction = [
                 },
                 error: 'INVALID_COMMISSION',
             },
-            type: {
+            type: { // my product, other people's product
                 type: Number,
             },
             product: {

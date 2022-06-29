@@ -2,6 +2,7 @@ const Transaction = require('../helper/Transaction');
 const Camp = require('../helper/Campaign')
 const Node = require('../helper/Node');
 const NodeCamp = require('../helper/NodeCampaign');
+const config = require('../config');
 
 let publicFunction = {}
 
@@ -11,7 +12,8 @@ let cloudFunction = [{
 		code: {
 			required: true,
 			type: String,
-			options: val => {
+			options: val => { // http://viref.net/scan/
+				val = val.split(config.scanUrl).pop();
 				let type = val.split(":")[0]
 				let types = ["trans", "node"]
 				return val.length>5 && types.indexOf(type)>-1;
@@ -22,7 +24,8 @@ let cloudFunction = [{
 	async run(req) {
 		// if ( !req.user.get("phone") ) return Promise.reject(new Parse.Error(Parse.Error.SCRIPT_FAILED, "ACTIVE_PHONE_REQUIRED"));
 		
-		let [type, cid, txid] = req.params.code.split(":")
+		let code = req.params.code.split(config.scanUrl).pop();
+		let [type, cid, txid] = code.split(":")
 		let campaign = await Camp.validCampaign(cid)
 		if ( !campaign ) return Promise.reject(new Parse.Error(Parse.Error.SCRIPT_FAILED, "INVALID_CAMPAIGN"));
 

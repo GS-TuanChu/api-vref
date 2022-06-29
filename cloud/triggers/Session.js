@@ -6,5 +6,6 @@ Parse.Cloud.afterLogout(async function(request) {
   let query = new Parse.Query("Devices");
   query.equalTo("loginSession", md5Session);
   let device = await query.first({ useMasterKey: true });
-  return device.destroy({ useMasterKey: true })
+  if ( device )
+    return device.destroy({ useMasterKey: true })
 })

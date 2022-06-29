@@ -4,6 +4,7 @@ const Campaign = require('../helper/Campaign');
 const Node = require('../helper/Node');
 const NodeCampaign = require('../helper/NodeCampaign');
 const TokenTransaction = require('../helper/TokenTransaction');
+const WalletTransaction = require('../helper/WalletTransaction');
 
 Parse.Cloud.triggers.add("afterSave", "Transaction", async function(request) {
 	var newObj = request.object;
@@ -75,14 +76,34 @@ Parse.Cloud.triggers.add("afterSave", "Transaction", async function(request) {
 					campaign
 				}
 			})
+
+			await WalletTransaction.create({
+				params: {
+					node: currentNode, 
+					amount,
+					amountToken,
+					tx: request.object,
+					metadata: {n: chainNodeId.length, i},
+					campaign
+				}
+			})
 			totalPaid += amount
 		}
 		let moneyLeft = commission - totalPaid;
-		console.log("transfer", moneyLeft, commission, totalPaid)
 		if ( moneyLeft>0 ) { // send all change to campaignbonus@gostream
 			let bonusNode = await NodeCampaign.get(helper.createObject(Parse.User, config.campaignBonusUser.id), campaign);
-		console.log("transfer 2", bonusNode)
 			await TokenTransaction.create({
+				params: {
+					node: bonusNode.get("node"), 
+					amount: moneyLeft,
+					amountToken: 0,
+					tx: request.object,
+					metadata: {n: chainNodeId.length, i: -1},
+					campaign
+				}
+			})
+
+			await WalletTransaction.create({
 				params: {
 					node: bonusNode.get("node"), 
 					amount: moneyLeft,
@@ -94,6 +115,7 @@ Parse.Cloud.triggers.add("afterSave", "Transaction", async function(request) {
 			})
 		}
 		campaign.increment("paid", commission);
+		campaign.increment("currentProduct");
 		await campaign.save(null, {useMasterKey:true});
 	} catch(e) {
 		console.log("afterSave Transaction", {e})
