@@ -73,10 +73,18 @@ module.exports = {
 		});
 	},
   formatDate(date) {
-    const day = date.getDate()
-    const month = date.getMonth() + 1
-    const year = date.getFullYear()
-    return day + "/" + month + "/" + year
+    date = new Date(date);
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  },
+  formatUTCDate(date) {
+    date = new Date(date);
+    const month = date.getUTCMonth() + 1;
+    const day = date.getUTCDate();
+    const year = date.getUTCFullYear();
+    return `${day}/${month}/${year}`;
   },
   formatMonth(month) {
     const months = {
@@ -94,5 +102,26 @@ module.exports = {
       12: "Dec",
     }
     return months[month]
+  },
+  currencyConstants: {
+    VND_TEST: "QRPKGt2GL3",
+    USDC_TEST: "G9IfX9omNu",
+    VREF_TEST: "9thNzaLK9m",
+    VND: "UyOZMa1MbQ",
+    USDC: "",
+    VREF: "",
+  },
+  transactionConstants: {
+    VND_TEST: "ryHYD5SOnq",
+    USDC_TEST: "oVb2xp3lQZ",
+    VREF_TEST: "PHYOvA9sRW",
+    VND: "CuyiXLmbiW",
+    USDC: "oVb2xp3lQZ",
+    VREF: "PHYOvA9sRW"
+  },
+  nodeConstants: {
+    ID_TEST: "Qsa8B4ZkAN",
+    ID: "gmrpiIY7i9"
   }
+
 }

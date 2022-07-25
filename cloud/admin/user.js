@@ -1,6 +1,7 @@
 const helper = require('../helper');
 const TokenTransaction = require("../helper/TokenTransaction")
-const UserHelper = require("../helper/User")
+const UserHelper = require("../helper/User");
+const WalletTransaction = require('../helper/WalletTransaction');
 
 let publicFunction = {};
 
@@ -48,18 +49,27 @@ let cloudFunction = [
         async run(req) {
             let { uid } = req.params;
             const userQuery = new Parse.Query('User');
+            const balanceQuery = new Parse.Query('UserBalance')
+            balanceQuery.include("currency")
             userQuery.equalTo('objectId', uid);
             const user = await userQuery.first({
                 useMasterKey: true,
             });
+            balanceQuery.equalTo('user', user)
+            let balances = await balanceQuery.find({ useMasterKey: true })
             const rolesQuery = new Parse.Query(Parse.Role);
+            const balance = balances.map(b => ({
+              currency: b.get('currency').get('name'),
+              balance: b.get('balance'),
+              id: b.get('currency').id
+            }))
             rolesQuery.equalTo('users', user);
             const roles = await rolesQuery.find({ useMasterKey: true });
             const res = []
             for (let i = 0; i < roles.length; ++i) {
               res.push(roles[i].get('name'))
             }
-            return { user, roles: res };
+            return { user, roles: res, balance };
         },
     },
     {
@@ -72,11 +82,13 @@ let cloudFunction = [
             },
         },
         async run(req) {
-            let t0 = performance.now()
-            let { id, amount } = req.params;
+            let { id, amount, currencyId, note } = req.params;
             const user = await UserHelper.getById(id)
-            if (amount) {
-              await TokenTransaction.updateAmount(amount, user)
+            if (amount && !note) {
+              return Promise.reject(new Parse.Error(Parse.Error.SCRIPT_FAILED, "INVALID_NOTE"))
+            }
+            if (amount && note) {
+              await WalletTransaction.updateAmount(amount, user, currencyId, note)
             } else {
               const fields = [
                   'username',
@@ -90,8 +102,6 @@ let cloudFunction = [
               fields.forEach((f) => user.set(f, req.params[f]));
             }
             const res = await user.save(null, { sessionToken: req.user.getSessionToken() })
-            let t1 = performance.now()
-            console.log("#### ", t1 - t0)
             return {id: res.id}
         },
     },
@@ -162,6 +172,7 @@ let cloudFunction = [
         const { searchText } = req.params
         const userQuery = new Parse.Query('User');
         userQuery.fullText("username", searchText)
+        userQuery.select("username")
         const users = await userQuery.find({useMasterKey: true})
         return Promise.all(
             users.map(async (user) => {

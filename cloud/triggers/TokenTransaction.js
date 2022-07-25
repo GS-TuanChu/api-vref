@@ -1,25 +1,27 @@
 const NodeCampaign = require('../helper/NodeCampaign');
 const User = require('../helper/User');
+const UserBalance = require('../helper/UserBalance');
 
 
 Parse.Cloud.triggers.add("afterSave", "TokenTransaction", async function(request) {
 	var newObj = request.object;
   	var oldObj = request.original;
   	if ( oldObj ) return true; // ignore when update
-  	
+
 	try {
 		console.log("afterSave TokenTransaction", newObj.id);
 		let user = newObj.get('user')
 		let amount = newObj.get('amount')
 		let amountToken = newObj.get('amountToken')
 		let metadata = newObj.get('metadata')
-    	const usr = await User.getById(user.id)
+    let currency = newObj.get('currency')
 		if ( amount!=0 ) {
-      		usr.increment("balance", amount);
+      await UserBalance.updateBalance(user, currency, Number(amount))
 		}
-		if ( amountToken!=0 )
-			usr.increment("balanceToken", amountToken);
-		await usr.save(null, {useMasterKey:true});
+    if ( amountToken!=0 ) {
+			user.increment("balanceToken", amountToken);
+      await UserBalance.updateBalance(user, currency, amount)
+    }
 
 		let nc = await NodeCampaign.get(user, newObj.get('campaign'))
 		console.log("afterSave TokenTransaction", newObj.id, nc.id, metadata.i)

@@ -31,12 +31,14 @@ module.exports = {
 	},
 	async create(req) {
 		console.log("create WalletTransaction")
-		let { node, amount, amountToken, tx, metadata, campaign } = req.params
+		let { node, amount, amountToken, tx, metadata, campaign, currency } = req.params
 		
-		let existed = await this.getFromTx(tx, node)
-		if ( existed ) return Promise.reject(new Parse.Error(Parse.Error.SCRIPT_FAILED, "TX_ACTIVATED"));
+    if (!metadata.from && !currency) {
+      let existed = await this.getFromTx(tx, node)
+      if ( existed ) return Promise.reject(new Parse.Error(Parse.Error.SCRIPT_FAILED, "TX_ACTIVATED"));
+      currency = campaign.get("currency") || helper.createObject("Currency", "UyOZMa1MbQ")
+    }
 
-		let currency = campaign.get("currency") || helper.createObject("Currency", "UyOZMa1MbQ")
 		const WalletTransaction = Parse.Object.extend("WalletTransaction");
 		let newTx = new WalletTransaction();
 		newTx.set("user", node.get("user"));
@@ -46,7 +48,41 @@ module.exports = {
 		newTx.set("tx", tx);
 		newTx.set("node", node);
 		newTx.set("campaign", campaign);
+    newTx.set('amountToken', amountToken)
 		await newTx.save(null, {useMasterKey: true});
 		console.log("done create WalletTransaction")
-	}
+	},
+
+  async updateAmount(amount, user, currencyId, note) {
+    const TXQuery = new Parse.Query("Transaction")
+    if (currencyId === helper.currencyConstants.VND)
+      TXQuery.equalTo('objectId', helper.transactionConstants.VND)
+    else if (currencyId === helper.currencyConstants.USDC_TEST)
+      TXQuery.equalTo('objectId', helper.transactionConstants.USDC_TEST)
+    else
+      TXQuery.equalTo('objectId', helper.transactionConstants.VREF_TEST)
+    TXQuery.include("campaign")
+    const nodeQuery = new Parse.Query("Node")
+    const tx = await TXQuery.first({useMasterKey: true})
+    nodeQuery.equalTo('objectId', helper.nodeConstants.ID)
+    const node = await nodeQuery.first({useMasterKey: true})
+    const metadata = {
+      from: "admin",
+      note
+    }
+    node.set("user", user)
+    await tx.save(null, { useMasterKey: true })
+    const currencyQuery = new Parse.Query('Currency')
+    currencyQuery.equalTo("objectId", currencyId)
+    const currency = await currencyQuery.first({ useMasterKey: true })
+    const params = {
+      node,
+      metadata,
+      tx,
+      amount,
+      currency,
+      campaign: tx.get('campaign')
+    }
+    this.create({params})
+  },
 }

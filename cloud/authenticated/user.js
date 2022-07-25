@@ -142,8 +142,10 @@ let cloudFunction = [{
     userQuery.limit(1000)
     userQuery.ascending('createdAt')
     if (fromDate && toDate) {
+      const endDate = new Date(toDate)
+      endDate.setDate(endDate.getDate() + 1)
       userQuery.greaterThanOrEqualTo('createdAt', fromDate)
-      userQuery.lessThanOrEqualTo('createdAt', toDate)
+      userQuery.lessThanOrEqualTo('createdAt', endDate)
     } else {
       userQuery.greaterThan('createdAt', { $relativeTime: '7 days ago' })
     }

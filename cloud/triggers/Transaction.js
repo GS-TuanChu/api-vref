@@ -77,6 +77,7 @@ Parse.Cloud.triggers.add("afterSave", "Transaction", async function(request) {
 				}
 			})
 
+      console.log("@@@ Before wallet transaction")
 			await WalletTransaction.create({
 				params: {
 					node: currentNode, 

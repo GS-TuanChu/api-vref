@@ -11,12 +11,12 @@
 			"*": true
 		},
 		"update": {
-			"requiresAuthentication": true
+      "role:admin": true
 		},
 		"delete": { "role:admin": true }
 	},
 	"accessControlList": {
-		"Read": "me, admin, customer_support",
-		"Write": "public"
+		"Write": "me, admin",
+		"Read": "public"
 	}
 }

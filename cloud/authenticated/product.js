@@ -23,7 +23,7 @@ let cloudFunction = [{
 			options: val => {
 				return val>0
 			},
-			error: "INVALID_NAME"
+			error: "INVALID_PRICE"
 		},
 		// currency: {
 		// 	type: String,
@@ -57,7 +57,7 @@ let cloudFunction = [{
 		product.set("description", description);
 		product.set("price", price);
 		product.set("currency", helper.createObject("Currency", currency || "UyOZMa1MbQ"));
-		product.set("media", media);
+		// product.set("media", media);
 		product.set("contact", contact);
 		product.set("category", helper.createObject("Category", category));
 

@@ -9,6 +9,7 @@ let cloudFunction = [
         fields: {},
         async run(req) {
             const productQuery = new Parse.Query('Product')
+            productQuery.ascending("name")
             const products = await productQuery.find({
                 sessionToken: req.user.getSessionToken(),
             })
@@ -48,7 +49,7 @@ let cloudFunction = [
         async run(req) {
             let { pid } = req.params
             const product = await Product.get(pid)
-            const fields = ['name', 'description', 'price', 'contact']
+            const fields = ['name', 'description', 'price', 'contact', 'media']
             fields.forEach((f) => product.set(f, req.params[f]))
             return product
                 .save(null, {
